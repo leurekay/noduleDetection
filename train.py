@@ -28,7 +28,7 @@ import pandas as pd
 
 
 config = {}
-config['anchors'] = [ 5.0, 10.0, 20.]
+config['anchors'] = [ 10.0, 20.0, 30.]
 config['chanel'] = 1
 config['crop_size'] = [128, 128, 128]
 config['stride'] = 4
@@ -41,8 +41,8 @@ config['num_hard'] = 2
 config['bound_size'] = 12
 config['reso'] = 1
 config['sizelim'] = 6. #mm
-config['sizelim2'] = 30
-config['sizelim3'] = 40
+config['sizelim2'] = 20
+config['sizelim3'] = 30
 config['aug_scale'] = True
 config['r_rand_crop'] = 0.3
 config['pad_value'] = 170
@@ -53,7 +53,7 @@ config['train_over_total']=0.8
 
 
 
-
+EPOCHS=100
 data_dir='/data/lungCT/luna/temp/luna_npy'
 SAVED_MODEL='/data/lungCT/luna/temp/model/my_model.h5'
 
@@ -122,7 +122,7 @@ def generate_arrays(phase):
 
 
 model.fit_generator(generate_arrays(phase='train'),
-                    steps_per_epoch=train_samples,epochs=3,
+                    steps_per_epoch=train_samples,epochs=EPOCHS,
                     verbose=1,callbacks=[epoch_save],
                     validation_data=generate_arrays('val'),
                     validation_steps=val_samples,
