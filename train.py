@@ -74,7 +74,7 @@ if os.path.exists(SAVED_MODEL):
     print ("*************************\n restore model\n*************************")
     model=load_model(SAVED_MODEL)  
 else:
-    model=n_net()
+    model=layers.n_net()
     
 adam=keras.optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
 model.compile(optimizer=adam,
