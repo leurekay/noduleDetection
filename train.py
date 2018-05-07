@@ -15,9 +15,8 @@ import layers
 import time
 import os
 from PIL import Image
+
 import tensorflow as tf
-
-
 import keras
 import keras.backend as K
 from keras.models import Model,load_model
@@ -119,7 +118,7 @@ def generate_arrays(phase):
     while True:
         for i in range(n_samples):
             x, y ,_ = dataset.__getitem__(i)
-            x=np.expand_dims(x,axis=-1)
+            x=np.expand_dims(x,axis=0)
             y=np.expand_dims(y,axis=0)
             yield (x, y)
 

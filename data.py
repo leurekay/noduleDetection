@@ -160,9 +160,9 @@ class DataBowl3Detector():
                 sample, target, bboxes, coord = self.crop(imgs, [], bboxes,isScale=False,isRand=True)
             label = self.label_mapping(sample.shape[1:], target, bboxes)
             sample = (sample.astype(np.float32)-128)/128
-            #if filename in self.kagglenames and self.phase=='train':
-            #    label[label==-1]=0
-#            sample=np.expand_dims(sample,axis=-1)
+            
+            sample=np.expand_dims(sample,axis=-1)
+            sample=sample[0]
             return sample, label, coord
         else:
             imgs = np.load(self.filenames[idx])
