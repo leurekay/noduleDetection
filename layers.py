@@ -338,7 +338,7 @@ def loss_cls(y_true, y_pred):
     y_pos_pred=tf.boolean_mask(y_pred,mask_pos)
     y_neg_pred=tf.boolean_mask(y_pred,mask_neg)
     
-    y_neg_pred,y_neg_true=hard_mining(y_neg_pred,y_neg_true,3)
+    y_neg_pred,y_neg_true=hard_mining(y_neg_pred,y_neg_true,2)
     y_neg_true=y_neg_true+1.
     
     y_true=tf.concat([y_pos_true,y_neg_true],axis=0)
@@ -378,3 +378,7 @@ if __name__=='__main__':
     aa=sess.run(a)
     
 #    hh=sess.run(hard)
+    
+    
+    get=GetPBB(data.config)
+    oo=get.__call__(y[0])
