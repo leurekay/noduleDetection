@@ -57,7 +57,9 @@ EPOCHS=100
 data_dir='/data/lungCT/luna/temp/luna_npy'
 SAVED_MODEL='/data/lungCT/luna/temp/model/my_model.h5'
 
-model_dir=SAVED_MODEL.split(SAVED_MODEL.split('/')[-1])[0]        
+model_dir=SAVED_MODEL.split(SAVED_MODEL.split('/')[-1])[0]    
+if not os.path.exists(model_dir):
+    os.makedirs(model_dir)    
         
 #dataset=data.DataBowl3Detector(data_dir,config)
 #patch,label,coord=dataset.__getitem__(295)
@@ -68,6 +70,7 @@ model_dir=SAVED_MODEL.split(SAVED_MODEL.split('/')[-1])[0]
 #loss function
 myloss=layers.myloss
 
+loss_cls=layers.loss_cls
 
 #load model
 if os.path.exists(SAVED_MODEL):
@@ -79,7 +82,7 @@ else:
 adam=keras.optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
 model.compile(optimizer=adam,
               loss=myloss,
-              )
+              metrics=[loss_cls])
 
 
 
@@ -129,6 +132,5 @@ model.fit_generator(generate_arrays(phase='train'),
                     workers=4,)
 
 
-if not os.path.exists(model_dir):
-    os.makedirs(model_dir)
+
 model.save(SAVED_MODEL,include_optimizer=False)

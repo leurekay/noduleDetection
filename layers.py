@@ -326,6 +326,29 @@ def myloss(y_true, y_pred):
     return loss
 
 
+
+def loss_cls(y_true, y_pred):
+    y_true=tf.reshape(y_true,[-1,5])
+    y_pred=tf.reshape(y_pred,[-1,5])
+    mask_pos=tf.greater(y_true[:,0],0.5)
+    mask_neg=tf.less(y_true[:,0],-0.5)
+    y_pos_true=tf.boolean_mask(y_true,mask_pos)
+    y_neg_true=tf.boolean_mask(y_true,mask_neg)
+    
+    y_pos_pred=tf.boolean_mask(y_pred,mask_pos)
+    y_neg_pred=tf.boolean_mask(y_pred,mask_neg)
+    
+    y_neg_pred,y_neg_true=hard_mining(y_neg_pred,y_neg_true,3)
+    y_neg_true=y_neg_true+1.
+    
+    y_true=tf.concat([y_pos_true,y_neg_true],axis=0)
+    y_pred=tf.concat([y_pos_pred,y_neg_pred],axis=0)
+    
+    y_pred_sigmoid=tf.sigmoid(y_pred[:,0])
+    loss_cls=tf.losses.log_loss(y_true[:,0],y_pred_sigmoid)
+    return loss_cls
+
+
     
 if __name__=='__main__':
     model=n_net()
