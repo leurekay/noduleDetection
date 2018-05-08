@@ -16,35 +16,9 @@ from scipy.ndimage import zoom
 import warnings
 from scipy.ndimage.interpolation import rotate
 
+import config
 
-
-config = {}
-config['anchors'] = [ 5.0, 10.0, 20.]
-config['chanel'] = 1
-config['crop_size'] = [128, 128, 128]
-config['stride'] = 4
-config['max_stride'] = 16
-config['num_neg'] = 800
-config['th_neg'] = 0.02
-config['th_pos_train'] = 0.5
-config['th_pos_val'] = 1
-config['num_hard'] = 2
-config['bound_size'] = 12
-config['reso'] = 1
-config['sizelim'] = 6. #mm
-config['sizelim2'] = 30
-config['sizelim3'] = 40
-config['aug_scale'] = True
-config['r_rand_crop'] = 0.3
-config['pad_value'] = 170
-config['augtype'] = {'flip':True,'swap':False,'scale':True,'rotate':False}
-config['blacklist'] = ['868b024d9fa388b7ddab12ec1c06af38','990fbe3f0a1b53878669967b9afd1441','adc3bbc63d40f8761c59be10f1e504c3']
-config['train_over_total']=0.9
-
-
-
-
-
+config=config.config
 
 
 
@@ -472,3 +446,6 @@ if __name__=="__main__":
     data_dir='/data/lungCT/luna/temp/luna_npy'
     data=DataBowl3Detector(data_dir,config,phase='train')
     patch,label,coord=data.__getitem__(5)
+    
+    n_patient=data.sample_bboxes
+    n_label=data.bboxes

@@ -24,30 +24,9 @@ from keras.models import Model,load_model
 
 import numpy as np
 import pandas as pd
+import config
 
-
-config = {}
-config['anchors'] = [ 10.0, 20.0, 30.]
-config['chanel'] = 1
-config['crop_size'] = [128, 128, 128]
-config['stride'] = 4
-config['max_stride'] = 16
-config['num_neg'] = 800
-config['th_neg'] = 0.02
-config['th_pos_train'] = 0.5
-config['th_pos_val'] = 1
-config['num_hard'] = 2
-config['bound_size'] = 12
-config['reso'] = 1
-config['sizelim'] = 6. #mm
-config['sizelim2'] = 20
-config['sizelim3'] = 30
-config['aug_scale'] = True
-config['r_rand_crop'] = 0.3
-config['pad_value'] = 170
-config['augtype'] = {'flip':True,'swap':False,'scale':True,'rotate':False}
-config['blacklist'] = ['868b024d9fa388b7ddab12ec1c06af38','990fbe3f0a1b53878669967b9afd1441','adc3bbc63d40f8761c59be10f1e504c3']
-config['train_over_total']=0.8
+config=config.config
 
 
 
@@ -79,6 +58,7 @@ else:
     model=layers.n_net()
     
 adam=keras.optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
+sgd=keras.optimizers.SGD(lr=0.001, decay=1e-6, momentum=0.9, nesterov=True)
 model.compile(optimizer=adam,
               loss=myloss,
               metrics=[loss_cls])
@@ -122,7 +102,7 @@ def generate_arrays(phase):
             y=np.expand_dims(y,axis=0)
             yield (x, y)
 
-
+model.save(SAVED_MODEL,include_optimizer=False)
 model.fit_generator(generate_arrays(phase='train'),
                     steps_per_epoch=train_samples,epochs=EPOCHS,
                     verbose=1,callbacks=[epoch_save],

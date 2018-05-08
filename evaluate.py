@@ -35,20 +35,23 @@ def sigmoid(x):
 
 
 
-dataset=data.DataBowl3Detector(data_dir,config.config,phase='val')
+dataset=data.DataBowl3Detector(data_dir,config.config,phase='train')
 
-x, y ,_ = dataset.__getitem__(10)
+x, y ,_ = dataset.__getitem__(66)
 x=np.expand_dims(x,axis=0)
 y=np.expand_dims(y,axis=0)
 
 pred=model.predict(x)
 pred=pred[0]
 pred[:,:,:,:,0]=sigmoid(pred[:,:,:,:,0])
-#pred=pred.reshape([-1.5])
+pred=pred.reshape([-1,5])
+pred=pred[np.argsort(-pred[:, 0])]
 #pred[:,0]=sigmoid(pred[:,0])
 
-get=layers.GetPBB(data.config)
-pos_out=get.__call__(pred,0.5)
 
 
-pos_out_nms=layers.nms(pos_out,0.5)
+
+#get=layers.GetPBB(data.config)
+#pos_out=get.__call__(pred,0.5)
+#
+#pos_out_nms=layers.nms(pos_out,0.5)
