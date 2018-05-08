@@ -363,7 +363,7 @@ if __name__=='__main__':
     
     data_dir='/data/lungCT/luna/temp/luna_npy'
     dataset=data.DataBowl3Detector(data_dir,data.config)
-    patch,label,coord=dataset.__getitem__(22)
+    patch,label,coord=dataset.__getitem__(46)
 
     y_true=tf.constant(label)
     
@@ -381,4 +381,13 @@ if __name__=='__main__':
     
     
     get=GetPBB(data.config)
-    oo=get.__call__(y[0])
+    table=get.__call__(label,0.5)
+    tabel_before_transform=label.reshape([-1,5])
+    
+    index=np.argsort(-table[:,0])
+    tabel_before_transform=tabel_before_transform[index]
+    table=table[index]
+    
+#    boxes=nms(table,0.5)
+    
+    
