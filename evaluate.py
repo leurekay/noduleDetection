@@ -48,7 +48,7 @@ pred[:,:,:,:,0]=sigmoid(pred[:,:,:,:,0])
 #pred[:,0]=sigmoid(pred[:,0])
 
 get=layers.GetPBB(data.config)
-pos_out=get.__call__(pred,0.3)
+pos_out=get.__call__(pred,0.6)
 
 
 pos_out_nms=layers.nms(pos_out,0.5)
