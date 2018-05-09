@@ -5,7 +5,7 @@ Created on Thu May  3 14:20:17 2018
 
 @author: ly
 """
-
+from keras.backend.tensorflow_backend import set_session
 
 import data
 
@@ -20,11 +20,17 @@ import tensorflow as tf
 import keras
 import keras.backend as K
 from keras.models import Model,load_model
-
+from keras.callbacks import LearningRateScheduler, ModelCheckpoint
 
 import numpy as np
 import pandas as pd
 import config
+
+tfconfig = tf.ConfigProto(allow_soft_placement=True)
+tfconfig.gpu_options.allow_growth = True
+set_session(tf.Session(config=tfconfig))
+
+
 
 config=config.config
 
@@ -50,6 +56,18 @@ myloss=layers.myloss
 
 loss_cls=layers.loss_cls
 
+
+
+def lr_decay(epoch):
+	lr = 0.0001
+	if epoch >= 150:
+		lr = 0.0003
+	if epoch >= 220:
+		lr = 0.00003
+	return lr 
+lr_scheduler = LearningRateScheduler(lr_decay)
+
+
 #load model
 if os.path.exists(SAVED_MODEL):
     print ("*************************\n restore model\n*************************")
@@ -57,7 +75,7 @@ if os.path.exists(SAVED_MODEL):
 else:
     model=layers.n_net()
     
-adam=keras.optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
+adam=keras.optimizers.Adam(lr=1000, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
 sgd=keras.optimizers.SGD(lr=0.001, decay=1e-6, momentum=0.9, nesterov=True)
 model.compile(optimizer=adam,
               loss=myloss,
@@ -85,18 +103,22 @@ class EpochSave(keras.callbacks.Callback):
         val_loss=logs.get('val_loss')
         self.losses.append([train_loss,val_loss])
 #        print ('epoch:',epoch,'    ',self.losses)
-        file_name=str(time_now)+'_train_%.3f_val_%.3f.h5'%(train_loss,val_loss)
+        file_name=str(time_now)+'_'+time.strftime('%Y%m%d-%H:%M:%S')+'_train_%.3f_val_%.3f.h5'%(train_loss,val_loss)
         model.save(os.path.join(model_dir,file_name),include_optimizer=False)
 epoch_save = EpochSave()
 
 
 #read data and processing by CPU ,during training.
 #Don't load all data into memory at onece!
-def generate_arrays(phase):
+def generate_arrays(phase,shuffle=True):
     dataset=data.DataBowl3Detector(data_dir,config,phase=phase)
     n_samples=dataset.__len__()
+    ids=np.array(np.arange(n_samples))
+
     while True:
-        for i in range(n_samples):
+        if shuffle:
+            np.random.shuffle(ids)
+        for i in ids:
             x, y ,_ = dataset.__getitem__(i)
             x=np.expand_dims(x,axis=0)
             y=np.expand_dims(y,axis=0)
@@ -105,7 +127,7 @@ def generate_arrays(phase):
 model.save(SAVED_MODEL,include_optimizer=False)
 model.fit_generator(generate_arrays(phase='train'),
                     steps_per_epoch=train_samples,epochs=EPOCHS,
-                    verbose=1,callbacks=[epoch_save],
+                    verbose=1,callbacks=[epoch_save,lr_scheduler],
                     validation_data=generate_arrays('val'),
                     validation_steps=val_samples,
                     workers=4,)

@@ -7,7 +7,7 @@ Created on Mon May  7 16:02:40 2018
 """
 
 config = {}
-config['anchors'] = [ 5.0, 10.0, 20.]
+config['anchors'] = [ 10.0, 20.0, 30.]
 config['chanel'] = 1
 config['crop_size'] = [128, 128, 128]
 config['stride'] = 4
@@ -20,10 +20,10 @@ config['num_hard'] = 2
 config['bound_size'] = 12
 config['reso'] = 1
 config['sizelim'] = 6. #mm
-config['sizelim2'] = 20
-config['sizelim3'] = 30
+config['sizelim2'] = 25
+config['sizelim3'] = 35
 config['aug_scale'] = True
-config['r_rand_crop'] = 0.1
+config['r_rand_crop'] = 0.3
 config['pad_value'] = 170
 config['augtype'] = {'flip':True,'swap':False,'scale':True,'rotate':False}
 config['blacklist'] = ['868b024d9fa388b7ddab12ec1c06af38','990fbe3f0a1b53878669967b9afd1441','adc3bbc63d40f8761c59be10f1e504c3']

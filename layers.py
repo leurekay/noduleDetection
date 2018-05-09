@@ -17,6 +17,7 @@ import pandas as pd
 from keras.models import Model
 from keras.layers import Dense, Dropout, Flatten,Input,Activation,Reshape
 from keras.layers import Conv2D, MaxPooling2D,MaxPooling3D,Conv3D,Deconv2D,Deconv3D
+from keras.layers.advanced_activations import LeakyReLU
 from keras.layers.merge import concatenate
 from keras.optimizers import SGD
 
@@ -72,8 +73,10 @@ def n_net():
     x=Deconv3D(64,kernel_size=(2,2,2),strides=2)(x)
     x=concatenate([r2,x])
     x=res_block(x,128,(1,1,1),(1,1,1))
-    x= Conv3D(64, (3, 3,3), strides=(1,1,1),padding='same', activation='relu')(x)
-    x= Conv3D(15, (3, 3,3), strides=(1,1,1),padding='same', activation='relu')(x)
+    x= Conv3D(64, (3, 3,3), strides=(1,1,1),padding='same', )(x)
+    x=LeakyReLU(alpha=0.3)(x)
+    x= Conv3D(15, (3, 3,3), strides=(1,1,1),padding='same', )(x)
+    x=LeakyReLU(alpha=0.3)(x)
     x= Reshape((32,32,32,3,5))(x)
     
     #predictions = Dense(10, activation='softmax')(x)
@@ -307,7 +310,8 @@ def myloss(y_true, y_pred):
     y_pred=tf.concat([y_pos_pred,y_neg_pred],axis=0)
     
     y_pred_sigmoid=tf.sigmoid(y_pred[:,0])
-    loss_cls=tf.losses.log_loss(y_true[:,0],y_pred_sigmoid)
+#    loss_cls=tf.losses.log_loss(y_true[:,0],y_pred_sigmoid)
+    loss_cls=tf.losses.sigmoid_cross_entropy(y_true[:,0],y_pred[:,0])
 
 
     def smoothL1(x,y):
@@ -345,7 +349,8 @@ def loss_cls(y_true, y_pred):
     y_pred=tf.concat([y_pos_pred,y_neg_pred],axis=0)
     
     y_pred_sigmoid=tf.sigmoid(y_pred[:,0])
-    loss_cls=tf.losses.log_loss(y_true[:,0],y_pred_sigmoid)
+#    loss_cls=tf.losses.log_loss(y_true[:,0],y_pred_sigmoid)
+    loss_cls=tf.losses.sigmoid_cross_entropy(y_true[:,0],y_pred[:,0])
     return loss_cls
 
 

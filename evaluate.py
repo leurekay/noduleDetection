@@ -6,6 +6,11 @@ Created on Mon May  7 13:03:17 2018
 @author: ly
 """
 
+from keras.backend.tensorflow_backend import set_session
+
+
+
+
 import os
 
 import numpy as np
@@ -19,6 +24,12 @@ from keras.models import Model,load_model
 import data
 import config
 import layers
+
+
+tfconfig = tf.ConfigProto(device_count={'cpu':0})
+#tfconfig.gpu_options.allow_growth = True
+set_session(tf.Session(config=tfconfig))
+
 
 SAVED_MODEL='/data/lungCT/luna/temp/model/my_model.h5'
 data_dir='/data/lungCT/luna/temp/luna_npy'
@@ -44,14 +55,16 @@ y=np.expand_dims(y,axis=0)
 pred=model.predict(x)
 pred=pred[0]
 pred[:,:,:,:,0]=sigmoid(pred[:,:,:,:,0])
-pred=pred.reshape([-1,5])
-pred=pred[np.argsort(-pred[:, 0])]
+
+pred_=pred.reshape([-1,5])
+pred_=pred_[np.argsort(-pred_[:, 0])]
+
 #pred[:,0]=sigmoid(pred[:,0])
 
 
 
 
-#get=layers.GetPBB(data.config)
-#pos_out=get.__call__(pred,0.5)
+get=layers.GetPBB(data.config)
+pos_out=get.__call__(pred,0.3)
 #
 #pos_out_nms=layers.nms(pos_out,0.5)

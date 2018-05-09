@@ -449,3 +449,4 @@ if __name__=="__main__":
     
     n_patient=data.sample_bboxes
     n_label=data.bboxes
+    length=data.__len__()
