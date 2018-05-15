@@ -75,6 +75,7 @@ def n_net():
     x=res_block(x,128,(1,1,1),(1,1,1))
     x= Conv3D(64, (3, 3,3), strides=(1,1,1),padding='same', )(x)
     x=LeakyReLU(alpha=0.3)(x)
+    x=Dropout(0.5)(x)
     x= Conv3D(15, (3, 3,3), strides=(1,1,1),padding='same', )(x)
     x=LeakyReLU(alpha=0.3)(x)
     x= Reshape((32,32,32,3,5))(x)
@@ -190,7 +191,7 @@ def acc(pbb, lbb, conf_th, nms_th, detect_th):
         for i, l in enumerate(lbb):
             score = iou(p[1:5], l)
             if score>bestscore:
-                bestscore = scorecube
+                bestscore = score
                 besti = i
         if bestscore > detect_th:
             flag = 1

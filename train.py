@@ -27,11 +27,14 @@ import pandas as pd
 import config
 import argparse
 
+
+
 tfconfig = tf.ConfigProto(allow_soft_placement=True)
 tfconfig.gpu_options.allow_growth = True
 set_session(tf.Session(config=tfconfig))
 
 
+#load config
 config=config.config
 
 
@@ -40,8 +43,9 @@ config=config.config
 
 EPOCHS=100
 InitialEpoch=0
-data_dir='/data/lungCT/luna/temp/luna_npy'
-model_dir='/data/lungCT/luna/temp/model3/'
+data_dir='/data/lungCT/luna/temp/luna_npy' #including  *_clean.npy and *_label.npy
+model_dir='/data/lungCT/luna/temp/model4/'
+
 
 #command line parameter setting
 parser = argparse.ArgumentParser()
@@ -57,7 +61,7 @@ InitialEpoch=args.startepoch
  
         
 
-#deal saved model dir
+#deal saved model dir. Mapping epoch id to file
 if not os.path.exists(model_dir):
     os.makedirs(model_dir)
     epoch_file_dict={}
@@ -75,7 +79,7 @@ else:
 
 
 
-#determine how to load model
+#judge how to load model which restore or Start from scratch
 if InitialEpoch==0:
     model=layers.n_net()
 else:
@@ -112,19 +116,26 @@ model.compile(optimizer='adam',
 
 
 #checkpoint for callback
-checkpoint=ModelCheckpoint(filepath=os.path.join(model_dir,'epoch:{epoch:03d}-trainloss:{loss:.2f}-{loss_cls:.2f}-valloss:{val_loss:.2f}-{val_loss_cls:.2f}.h5'), 
+checkpoint=ModelCheckpoint(filepath=os.path.join(model_dir,'epoch:{epoch:03d}-trainloss:({loss:.3f}-{loss_cls:.3f})-valloss:({val_loss:.3f}-{val_loss_cls:.3f}).h5'), 
                                 monitor='val_loss', 
                                 verbose=0, 
                                 save_best_only=False, 
                                 save_weights_only=False, 
                                 period=1)
 
-#controled learning rate for callback
+#controled learning rate for callback  
+
+
 def lr_decay(epoch):
-	lr = 0.001
-	if epoch >= 10:
-		lr = 0.0005
-	return lr 
+    lr=0.001
+    if epoch>2:
+        lr=0.0001
+    if epoch>10:
+        lr=0.00001
+    if epoch>20:
+        lr=0.000001
+    return lr
+
 lr_scheduler = LearningRateScheduler(lr_decay)
 #callback list
 callback_list = [checkpoint,lr_scheduler]
@@ -162,6 +173,7 @@ def generate_arrays(phase,shuffle=True):
             yield (x, y)
 
 
+#training
 model.fit_generator(generate_arrays(phase='train'),
                     steps_per_epoch=train_samples,
                     epochs=EPOCHS,initial_epoch=InitialEpoch,

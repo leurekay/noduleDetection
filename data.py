@@ -246,7 +246,8 @@ class Crop(object):
                 start.append(np.random.randint(e,s))#!
             else:
                 start.append(int(target[i])-crop_size[i]/2+np.random.randint(-bound_size/2,bound_size/2))
-                
+#        print (start)
+#        print (target)
                 
         normstart = np.array(start).astype('float32')/np.array(imgs.shape[1:])-0.5
         normsize = np.array(crop_size).astype('float32')/np.array(imgs.shape[1:])
@@ -445,7 +446,10 @@ def collate(batch):
 if __name__=="__main__":
     data_dir='/data/lungCT/luna/temp/luna_npy'
     data=DataBowl3Detector(data_dir,config,phase='train')
-    patch,label,coord=data.__getitem__(5)
+    patch,label,coord=data.__getitem__(15)
+    label_reshape=label.reshape([-1,5])
+    aa=label_reshape[np.argsort(-label_reshape[:,0])][0]
+    
     
     n_patient=data.sample_bboxes
     n_label=data.bboxes
