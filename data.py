@@ -70,7 +70,10 @@ class DataBowl3Detector():
             if phase == 'val':
                 idcs=idcs[split_point:]
         
-
+        else:
+            idcs=list(id_list)
+            idcs.sort()
+        
         self.filenames = [os.path.join(data_dir, '%s_clean.npy' % idx) for idx in idcs]
 
         
@@ -98,6 +101,8 @@ class DataBowl3Detector():
 
         self.crop = Crop(config)
         self.label_mapping = LabelMapping(config, self.phase)
+        
+        self.__shape__=None
 
     def __getitem__(self, idx,split=None):
         t = time.time()
@@ -119,6 +124,7 @@ class DataBowl3Detector():
                 bbox = self.bboxes[idx]
                 filename = self.filenames[int(bbox[0])]
                 imgs = np.load(filename)
+                self.__shape__=imgs.shape[1:]
                 bboxes = self.sample_bboxes[int(bbox[0])]
                 isScale = self.augtype['scale'] and (self.phase=='train')
                 sample, target, bboxes, coord = self.crop(imgs, bbox[1:], bboxes,isScale,isRandom)
@@ -167,6 +173,37 @@ class DataBowl3Detector():
             return len(self.bboxes)
         else:
             return len(self.sample_bboxes)
+    
+    def test_patches(self,idx):
+        if self.phase != 'test':
+            raise Exception('current phase no need to call this function')
+            return 
+        
+        margin=32
+        crop_size=np.array([128,128,128])
+        
+        imgs = np.load(self.filenames[idx])
+        
+        bboxes = self.sample_bboxes[idx]
+        image_shape = imgs.shape[1:]
+#        print (image_shape)
+        nxyz=np.ceil(image_shape/crop_size.astype('float'))
+        over=nxyz*crop_size-image_shape
+        margin=np.ceil(over/(nxyz-1))
+        stride=crop_size-margin
+#        xx=np.arange(0,image_shape[0]-crop_size[0]+1,stride[0])
+        xx=np.linspace(0,image_shape[0]-crop_size[0],nxyz[0]).astype('int')
+        yy=np.linspace(0,image_shape[1]-crop_size[1],nxyz[1]).astype('int')
+        zz=np.linspace(0,image_shape[2]-crop_size[2],nxyz[2]).astype('int')
+        box=[]
+        for xxx in xx:
+            for yyy in yy:
+                for zzz in zz:
+                    box.append([xxx,yyy,zzz])
+        
+        imgs=(imgs.astype(np.float32)-128)/128
+        imgs=np.expand_dims(imgs,axis=-1)
+        return imgs,box,bboxes
         
 
 
@@ -447,6 +484,10 @@ if __name__=="__main__":
     data_dir='/data/lungCT/luna/temp/luna_npy'
     data=DataBowl3Detector(data_dir,config,phase='train')
     patch,label,coord=data.__getitem__(15)
+    start=coord[:,0,0,0]
+    end=coord[:,31,31,31]
+    delta=end-start
+    print ("imge shape :",data.__shape__)
     label_reshape=label.reshape([-1,5])
     aa=label_reshape[np.argsort(-label_reshape[:,0])][0]
     
@@ -454,3 +495,7 @@ if __name__=="__main__":
     n_patient=data.sample_bboxes
     n_label=data.bboxes
     length=data.__len__()
+    
+    
+    data=DataBowl3Detector(data_dir,config,phase='test')
+    ooxx=data.test_patches(8)

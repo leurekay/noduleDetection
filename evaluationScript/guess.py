@@ -25,11 +25,12 @@ ids=list(df_id[0])
 def gauss_guess(bbox):
     a=np.copy(bbox)
     xyz=a[:3]
-    r=a[-1]/2
+    r=a[-1]
     coord=np.random.normal(xyz,[r,r,r])
     dist_vec=coord-xyz
     dist=np.linalg.norm(dist_vec)
-    prob=np.exp(-0.4*dist/r)
+#    prob=np.exp(-0.4*dist/r)
+    prob=np.random.uniform()
     coord=coord.tolist()
     return coord+[prob]
 

@@ -509,10 +509,10 @@ if __name__ == '__main__':
     
     annotations_filename='/data/lungCT/luna/evaluationScript/annotations/annotations.csv'
     annotations_excluded_filename = '/data/lungCT/luna/evaluationScript/annotations/annotations_excluded.csv'
-    seriesuids_filename           = '/data/lungCT/luna/evaluationScript/annotations/seriesuids2.csv'
+    seriesuids_filename           = '/data/lungCT/luna/evaluationScript/annotations/seriesuids.csv'
     
-    results_filename              = '/data/lungCT/luna/evaluationScript/exampleFiles/submission/sampleSubmission2.csv'
-    outputDir                     = '/data/lungCT/luna/evaluationScript/exampleFiles/kkk3'
+    results_filename              = '/data/lungCT/luna/evaluationScript/exampleFiles/submission/guess.csv'
+    outputDir                     = '/data/lungCT/luna/evaluationScript/exampleFiles/guess_kkk4'
     if not os.path.exists(outputDir):
         os.makedirs(outputDir)
     
