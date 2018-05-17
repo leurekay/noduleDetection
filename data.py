@@ -72,8 +72,9 @@ class DataBowl3Detector():
         
         else:
             idcs=list(id_list)
-            idcs.sort()
         
+        idcs.sort()
+        self.uids=idcs
         self.filenames = [os.path.join(data_dir, '%s_clean.npy' % idx) for idx in idcs]
 
         

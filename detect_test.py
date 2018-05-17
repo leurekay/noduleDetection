@@ -12,8 +12,10 @@ from keras.backend.tensorflow_backend import set_session
 
 
 import os
+import time
 
 import numpy as np
+import pandas as pd
 
 import tensorflow as tf
 import keras
@@ -31,10 +33,19 @@ import layers
 #set_session(tf.Session(config=tfconfig))
 
 
-SAVED_MODEL='/data/lungCT/luna/temp/model3/epoch:024-trainloss:0.21-0.07-valloss:0.58-0.43.h5'
+SAVED_MODEL='/data/lungCT/luna/temp/model4/epoch:096-trainloss:(0.512-0.170)-valloss:(0.734-0.408).h5'
 data_dir='/data/lungCT/luna/temp/luna_npy'
+ctinfo_path='preprocessing/ct_info.csv'
+pred_save_dir='/data/lungCT/luna/temp/submit'
+if not os.path.exists(pred_save_dir):
+    os.makedirs(pred_save_dir)
 
-
+ctinfo=pd.read_csv(ctinfo_path,index_col='seriesuid')
+uid_origin_dict={}
+uids=list(ctinfo.index)
+for uid in uids:
+    origin=list(ctinfo.loc[uid])[:3]
+    uid_origin_dict[uid]=origin
     
 def sigmoid(x):
     return 1/(1+np.exp(-x))
@@ -47,43 +58,66 @@ nms_th=0.6
 iou_th=0.3
 
 
-dataset=data.DataBowl3Detector(data_dir,config.config,phase='test')
 
-get=layers.GetPBB(data.config)
+
+
 
 
 #load model
 if os.path.exists(SAVED_MODEL):
-    print ("*************************\n restore model\n*************************")
+    print ("*************************\n restore model from %s\n*************************"%SAVED_MODEL)
     model=load_model(SAVED_MODEL,compile=False)  
 else:
     raise Exception("no model")
 
 
+dataset=data.DataBowl3Detector(data_dir,config.config,phase='test')
+get=layers.GetPBB(data.config)
+
 labels=dataset.sample_bboxes
 
+pred_df=pd.DataFrame(columns=['seriesuid','coordX','coordY','coordZ','probability'])
+count=0
 
-
-
-image,patches,bboxes = dataset.test_patches(40)
-
-box=[]
-for i,patch in enumerate(patches):
-    print (i)
-    sx,sy,sz=patch
-    ex,ey,ez=sx+128,sy+128,sz+128
-    x=image[:,sx:ex,sy:ey,sz:ez,:]
-    pred=model.predict(x)
-    pred=pred[0]
-    pred[:,:,:,:,0]=sigmoid(pred[:,:,:,:,0])
-     
-    pos_pred=get.__call__(pred,0.2)
-#    pos_pred=layers.nms(pos_pred,nms_th)
-    pos_pred[:,1]+=sx
-    pos_pred[:,2]+=sy
-    pos_pred[:,3]+=sz
-    box.append(pos_pred)
-box=np.concatenate(box)
+for index in range(0,100):
+    time_s=time.time()
+    
+    image,patches,bboxes = dataset.test_patches(index)
+    uid=dataset.uids[index]
+    origin=uid_origin_dict[uid]
+    
+    
+    box=[]
+    for i,patch in enumerate(patches):
+#        print (i)
+        sx,sy,sz=patch
+        ex,ey,ez=sx+128,sy+128,sz+128
+        x=image[:,sx:ex,sy:ey,sz:ez,:]
+        pred=model.predict(x)
+        pred=pred[0]
+        pred[:,:,:,:,0]=sigmoid(pred[:,:,:,:,0])
+         
+        pos_pred=get.__call__(pred,0.2)
+    #    pos_pred=layers.nms(pos_pred,nms_th)
+        pos_pred[:,1]+=sx
+        pos_pred[:,2]+=sy
+        pos_pred[:,3]+=sz
+        
+#        pos_pred[:,1]+=origin[0]
+#        pos_pred[:,2]+=origin[1]
+#        pos_pred[:,3]+=origin[2]
+        box.append(pos_pred)
+    box=np.concatenate(box)
+    box_nms=layers.nms(box,0.6)
+    time_e=time.time()
+    print ('CT-%03d, nodules:%2d , pos:%3d , pos_nms:%3d , time:%.1fs'%(index,bboxes.shape[0],box.shape[0],box_nms.shape[0],time_e-time_s))
+    for entry in box_nms:
+        pred_df.loc[count]=[uid,entry[1],entry[2],entry[3],entry[0]]
+        count+=1
+        
+pred_df.to_csv(os.path.join(pred_save_dir,str(time.time())+'.csv'),index=None)  
+print ("output %d postive predictions"%pred_df.shape[0])
+    
 
 
     
