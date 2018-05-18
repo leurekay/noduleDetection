@@ -79,21 +79,22 @@ labels=dataset.sample_bboxes
 pred_df=pd.DataFrame(columns=['seriesuid','coordX','coordY','coordZ','probability'])
 count=0
 
-for index in range(0,100):
+for index in range(100,300):
     time_s=time.time()
     
-    image,patches,bboxes = dataset.test_patches(index)
+    image,patch_box,bboxes = dataset.test_patches(index)
     uid=dataset.uids[index]
     origin=uid_origin_dict[uid]
     
+    _,xsize,ysize,zsize,_=image.shape
+ 
     
     box=[]
-    for i,patch in enumerate(patches):
+    for i,(patch,coord,start) in enumerate(patch_box):
 #        print (i)
-        sx,sy,sz=patch
-        ex,ey,ez=sx+128,sy+128,sz+128
-        x=image[:,sx:ex,sy:ey,sz:ez,:]
-        pred=model.predict(x)
+        sx,sy,sz=start
+   
+        pred=model.predict(patch)
         pred=pred[0]
         pred[:,:,:,:,0]=sigmoid(pred[:,:,:,:,0])
          
@@ -110,13 +111,16 @@ for index in range(0,100):
     box=np.concatenate(box)
     box_nms=layers.nms(box,0.6)
     time_e=time.time()
-    print ('CT-%03d, nodules:%2d , pos:%3d , pos_nms:%3d , time:%.1fs'%(index,bboxes.shape[0],box.shape[0],box_nms.shape[0],time_e-time_s))
+    print ('CT-%03d, nodules:%2d, pos:%3d, pos_nms:%3d, patches:%3d, shape-[%3d,%3d,%3d], time:%.1fs'%(index,bboxes.shape[0],box.shape[0],box_nms.shape[0],len(patch_box),xsize,ysize,zsize,time_e-time_s))
+
     for entry in box_nms:
         pred_df.loc[count]=[uid,entry[1],entry[2],entry[3],entry[0]]
         count+=1
-        
-pred_df.to_csv(os.path.join(pred_save_dir,str(time.time())+'.csv'),index=None)  
+
+save_path=os.path.join(pred_save_dir,str(int(time.time()))+'.csv')
+pred_df.to_csv(save_path,index=None)  
 print ("output %d postive predictions"%pred_df.shape[0])
+print ("csv file saved in %s"%save_path)
     
 
 

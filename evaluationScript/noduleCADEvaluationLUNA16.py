@@ -512,8 +512,8 @@ if __name__ == '__main__':
     annotations_excluded_filename = 'annotations/annotations_excluded.csv'
     seriesuids_filename           = 'annotations/seriesuids.csv'
     
-    results_filename              = '/data/lungCT/luna/temp/submit/1526551261.7869864.csv'
-    outputDir                     = '/data/lungCT/luna/temp/froc/www'
+    results_filename              = '/data/lungCT/luna/temp/submit/1526623535.csv'
+    outputDir                     = '/data/lungCT/luna/temp/froc/ttt'
     if not os.path.exists(outputDir):
         os.makedirs(outputDir)
     

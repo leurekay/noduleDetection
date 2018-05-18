@@ -177,34 +177,48 @@ class DataBowl3Detector():
     
     def test_patches(self,idx):
         if self.phase != 'test':
-            raise Exception('current phase no need to call this function')
+            raise Exception('only test phase can call this function !')
             return 
         
-        margin=32
         crop_size=np.array([128,128,128])
+        self.crop_size=crop_size
         
         imgs = np.load(self.filenames[idx])
+        imgs=np.expand_dims(imgs,axis=-1)
+        _,xsize,ysize,zsize,_=imgs.shape
         
         bboxes = self.sample_bboxes[idx]
-        image_shape = imgs.shape[1:]
-#        print (image_shape)
-        nxyz=np.ceil(image_shape/crop_size.astype('float'))
-        over=nxyz*crop_size-image_shape
-        margin=np.ceil(over/(nxyz-1))
-        stride=crop_size-margin
-#        xx=np.arange(0,image_shape[0]-crop_size[0]+1,stride[0])
+        image_shape = imgs.shape[1:4]
+
+        nxyz=np.ceil(image_shape/crop_size.astype('float'))+1
+       
         xx=np.linspace(0,image_shape[0]-crop_size[0],nxyz[0]).astype('int')
         yy=np.linspace(0,image_shape[1]-crop_size[1],nxyz[1]).astype('int')
         zz=np.linspace(0,image_shape[2]-crop_size[2],nxyz[2]).astype('int')
-        box=[]
-        for xxx in xx:
-            for yyy in yy:
-                for zzz in zz:
-                    box.append([xxx,yyy,zzz])
+        patch_box=[]
+        for sx in xx:
+            for sy in yy:
+                for sz in zz:
+                    start=[sx,sy,sz]
+                    ex,ey,ez=min(sx+128,xsize),min(sy+128,ysize),min(sz+128,zsize)
+                    patch=imgs[:,sx:ex,sy:ey,sz:ez,:]
+                    _,xxsize,yysize,zzsize,_=patch.shape
+                    patch=np.pad(patch, ((0,0),(0,128-xxsize),(0,128-yysize),(0,128-zzsize),(0,0)), 
+                             'constant', constant_values=self.pad_value)                    
+                    patch=(patch.astype(np.float32)-128)/128
+                    
+
+                    normstart = np.array(start).astype('float32')/np.array(imgs.shape[1:4])-0.5
+                    normsize = np.array(crop_size).astype('float32')/np.array(imgs.shape[1:4])
+                    xxx,yyy,zzz = np.meshgrid(np.linspace(normstart[0],normstart[0]+normsize[0],self.crop_size[0]/self.stride),
+                                       np.linspace(normstart[1],normstart[1]+normsize[1],self.crop_size[1]/self.stride),
+                                       np.linspace(normstart[2],normstart[2]+normsize[2],self.crop_size[2]/self.stride),indexing ='ij')
+                    coord = np.concatenate([xxx[np.newaxis,...], yyy[np.newaxis,...],zzz[np.newaxis,:]],0).astype('float32')                   
+                    
+                    
+                    patch_box.append([patch,coord,start])
         
-        imgs=(imgs.astype(np.float32)-128)/128
-        imgs=np.expand_dims(imgs,axis=-1)
-        return imgs,box,bboxes
+        return imgs,patch_box,bboxes
         
 
 
@@ -490,7 +504,7 @@ if __name__=="__main__":
     delta=end-start
     print ("imge shape :",data.__shape__)
     label_reshape=label.reshape([-1,5])
-    aa=label_reshape[np.argsort(-label_reshape[:,0])][0]
+    aaa=label_reshape[np.argsort(-label_reshape[:,0])][0]
     
     
     n_patient=data.sample_bboxes
@@ -499,4 +513,4 @@ if __name__=="__main__":
     
     
     data=DataBowl3Detector(data_dir,config,phase='test')
-    ooxx=data.test_patches(8)
+    ooxx=data.test_patches(15)

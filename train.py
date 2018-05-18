@@ -44,7 +44,7 @@ config=config.config
 EPOCHS=100
 InitialEpoch=0
 data_dir='/data/lungCT/luna/temp/luna_npy' #including  *_clean.npy and *_label.npy
-model_dir='/data/lungCT/luna/temp/model4/'
+model_dir='/data/lungCT/luna/temp/model6/'
 
 
 #command line parameter setting
@@ -100,6 +100,7 @@ else:
 #def metric1(y_true, y_pred):
 #    return tf.reduce_mean(tf.reduce_sum(y_true*y_pred,axis=1),axis=0)
 loss_cls=layers.loss_cls
+recall=layers.recall
 
 #custumn loss function
 myloss=layers.myloss
@@ -107,7 +108,7 @@ myloss=layers.myloss
 #compile
 model.compile(optimizer='adam',
               loss=myloss,
-              metrics=[loss_cls])
+              metrics=[loss_cls,recall])
 
 
 
@@ -129,11 +130,11 @@ checkpoint=ModelCheckpoint(filepath=os.path.join(model_dir,'epoch:{epoch:03d}-tr
 def lr_decay(epoch):
     lr=0.001
     if epoch>2:
+        lr=0.001
+    if epoch>5:
         lr=0.0001
     if epoch>10:
         lr=0.00001
-    if epoch>20:
-        lr=0.000001
     return lr
 
 lr_scheduler = LearningRateScheduler(lr_decay)
@@ -167,10 +168,12 @@ def generate_arrays(phase,shuffle=True):
         if shuffle:
             np.random.shuffle(ids)
         for i in ids:
-            x, y ,_ = dataset.__getitem__(i)
+            x, y ,coord = dataset.__getitem__(i)
             x=np.expand_dims(x,axis=0)
             y=np.expand_dims(y,axis=0)
-            yield (x, y)
+            coord=np.transpose(coord,[3,1,2,0])
+            coord=np.expand_dims(coord,axis=0)
+            yield ([x,coord],y)
 
 
 #training

@@ -47,6 +47,46 @@ def res_block(x,conv_filters,pool_size,pool_strides):
 
 def n_net():
     input_img = Input(shape=(128,128,128,1))
+    coord=Input(shape=(32,32,32,3))
+    
+    #first 2 conv layers
+    x = Conv3D(24, (3, 3,3), padding='same', activation='relu')(input_img)
+    x = Conv3D(24, (3, 3,3), strides=(1,1,1),padding='same', activation='relu')(x)
+    
+    
+    #first residual block,including 3 residual units
+    """
+    resnet block get from github
+    https://github.com/leurekay/keras-resnet/blob/master/resnet.py
+    """
+    x=res_block(x,conv_filters=32,pool_size=(2,2,2),pool_strides=(2,2,2))
+    
+    #next 3 residual block
+    r2=res_block(x,conv_filters=64,pool_size=(2,2,2),pool_strides=(2,2,2))
+    r3=res_block(r2,conv_filters=64,pool_size=(2,2,2),pool_strides=(2,2,2))
+    r4=res_block(r3,conv_filters=64,pool_size=(2,2,2),pool_strides=(2,2,2))
+    
+    
+    #feedback path
+    x=Deconv3D(64,kernel_size=(2,2,2),strides=2)(r4)
+    x=concatenate([r3,x])
+    x=res_block(x,64,(1,1,1),(1,1,1))
+    x=Deconv3D(64,kernel_size=(2,2,2),strides=2)(x)
+    x=concatenate([coord,r2,x])
+    x=res_block(x,128,(1,1,1),(1,1,1))
+    x= Conv3D(64, (3, 3,3), strides=(1,1,1),padding='same', )(x)
+    x=LeakyReLU(alpha=0.3)(x)
+    x=Dropout(0.5)(x)
+    x= Conv3D(15, (3, 3,3), strides=(1,1,1),padding='same', )(x)
+    x=LeakyReLU(alpha=0.3)(x)
+    x= Reshape((32,32,32,3,5))(x)
+    
+    #predictions = Dense(10, activation='softmax')(x)
+    model=Model(inputs=[input_img,coord],outputs=x )
+    return model
+
+def n_net_without_coord():#origin version, no coord, only one input
+    input_img = Input(shape=(128,128,128,1))
     
     #first 2 conv layers
     x = Conv3D(24, (3, 3,3), padding='same', activation='relu')(input_img)
@@ -353,6 +393,25 @@ def loss_cls(y_true, y_pred):
 #    loss_cls=tf.losses.log_loss(y_true[:,0],y_pred_sigmoid)
     loss_cls=tf.losses.sigmoid_cross_entropy(y_true[:,0],y_pred[:,0])
     return loss_cls
+    
+
+def recall(y_true, y_pred):
+    #recall
+    
+    y_true=tf.reshape(y_true,[-1,5])
+    y_pred=tf.reshape(y_pred,[-1,5])
+    mask_pos=tf.greater(y_true[:,0],0.5)
+    mask_neg=tf.less(y_true[:,0],-0.5)
+    y_pos_true=tf.boolean_mask(y_true,mask_pos)
+    y_neg_true=tf.boolean_mask(y_true,mask_neg)
+    
+    y_pos_pred=tf.boolean_mask(y_pred,mask_pos)
+    y_neg_pred=tf.boolean_mask(y_pred,mask_neg)
+    
+    label_pos=tf.sigmoid(y_pos_pred[:,0])
+    tp=tf.floor(label_pos+0.5)
+    tp=tf.reduce_sum(tp)
+    return tp
 
 
     

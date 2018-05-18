@@ -19,7 +19,7 @@ dataset=data.DataBowl3Detector(data_dir,config.config,phase='test')
 
 
 labels=dataset.sample_bboxes
-uids=dataset.uids[:100]
+uids=dataset.uids[100:300]
 
 
 
