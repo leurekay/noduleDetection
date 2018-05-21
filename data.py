@@ -31,7 +31,7 @@ config=config.config
 
 
 class DataBowl3Detector():
-    def __init__(self, data_dir,config, phase = 'train',split_comber=None):
+    def __init__(self, data_dir,split_dir,config, phase = 'train',split_comber=None):
         assert(phase == 'train' or phase == 'val' or phase == 'test')
         self.phase = phase
         self.max_stride = config['max_stride']       
@@ -46,34 +46,14 @@ class DataBowl3Detector():
         self.pad_value = config['pad_value']
         self.train_over_total=config['train_over_total']
         self.split_comber = split_comber
+        self.crop_size = config['crop_size']
 #        idcs = np.load(split_path)
 
 
-    
-        patient_list=os.listdir(data_dir)
         
-        ct_list=filter(lambda x:x.split('_')[-1]=='clean.npy',patient_list)
-        label_list=filter(lambda x:x.split('_')[-1]=='label.npy',patient_list)
-        
-        id_list_by_ct=map(lambda x:x.split('_')[0],ct_list)
-        id_list_by_label=map(lambda x:x.split('_')[0],label_list)
-    
-        id_list=set.intersection(set(id_list_by_ct),set(id_list_by_label))
-            
-        if phase!='test':
-            idcs=list(id_list)
-
-        
-            split_point=int(len(idcs)*self.train_over_total)
-            if phase == 'train':
-                idcs=idcs[:split_point]
-            if phase == 'val':
-                idcs=idcs[split_point:]
-        
-        else:
-            idcs=list(id_list)
-        
-        idcs.sort()
+        idcs=np.load(os.path.join(split_dir,phase+'.npy'))
+        idcs=list(idcs)
+        idcs=list(map(lambda x:str(x),idcs))
         self.uids=idcs
         self.filenames = [os.path.join(data_dir, '%s_clean.npy' % idx) for idx in idcs]
 
@@ -175,13 +155,12 @@ class DataBowl3Detector():
         else:
             return len(self.sample_bboxes)
     
-    def test_patches(self,idx):
-        if self.phase != 'test':
-            raise Exception('only test phase can call this function !')
-            return 
+    def package_patches(self,idx):
+#        if self.phase != 'test':
+#            raise Exception('only test phase can call this function !')
+#            return 
         
-        crop_size=np.array([128,128,128])
-        self.crop_size=crop_size
+        crop_size=np.array(self.crop_size)
         
         imgs = np.load(self.filenames[idx])
         imgs=np.expand_dims(imgs,axis=-1)
@@ -190,7 +169,7 @@ class DataBowl3Detector():
         bboxes = self.sample_bboxes[idx]
         image_shape = imgs.shape[1:4]
 
-        nxyz=np.ceil(image_shape/crop_size.astype('float'))+1
+        nxyz=np.ceil(image_shape/crop_size.astype('float'))
        
         xx=np.linspace(0,image_shape[0]-crop_size[0],nxyz[0]).astype('int')
         yy=np.linspace(0,image_shape[1]-crop_size[1],nxyz[1]).astype('int')
@@ -215,9 +194,10 @@ class DataBowl3Detector():
                                        np.linspace(normstart[2],normstart[2]+normsize[2],self.crop_size[2]/self.stride),indexing ='ij')
                     coord = np.concatenate([xxx[np.newaxis,...], yyy[np.newaxis,...],zzz[np.newaxis,:]],0).astype('float32')                   
                     
-                    
+                    coord=np.transpose(coord,[3,1,2,0])
+                    coord=np.expand_dims(coord,axis=0)                    
                     patch_box.append([patch,coord,start])
-        
+                    
         return imgs,patch_box,bboxes
         
 
@@ -497,7 +477,8 @@ def collate(batch):
 
 if __name__=="__main__":
     data_dir='/data/lungCT/luna/temp/luna_npy'
-    data=DataBowl3Detector(data_dir,config,phase='train')
+    split_dir='splitdata'
+    data=DataBowl3Detector(data_dir,split_dir,config,phase='val')
     patch,label,coord=data.__getitem__(15)
     start=coord[:,0,0,0]
     end=coord[:,31,31,31]
@@ -512,5 +493,5 @@ if __name__=="__main__":
     length=data.__len__()
     
     
-    data=DataBowl3Detector(data_dir,config,phase='test')
-    ooxx=data.test_patches(15)
+    data=DataBowl3Detector(data_dir,split_dir,config,phase='test')
+    ooxx=data.package_patches(15)

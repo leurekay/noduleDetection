@@ -507,13 +507,13 @@ if __name__ == '__main__':
 #    outputDir                     = sys.argv[5]
     
     
-#    annotations_filename='annotations/annotations.csv'
-    annotations_filename='/data/lungCT/luna/temp/my_anno.csv'
+    annotations_filename='../splitdata/val_anno.csv'
+#    annotations_filename='/data/lungCT/luna/temp/my_anno.csv'
     annotations_excluded_filename = 'annotations/annotations_excluded.csv'
     seriesuids_filename           = 'annotations/seriesuids.csv'
     
-    results_filename              = '/data/lungCT/luna/temp/submit/1526623535.csv'
-    outputDir                     = '/data/lungCT/luna/temp/froc/ttt'
+    results_filename              = '/data/lungCT/luna/temp/submit/1526899909-val.csv'
+    outputDir                     = '/data/lungCT/luna/temp/froc/n'
     if not os.path.exists(outputDir):
         os.makedirs(outputDir)
     

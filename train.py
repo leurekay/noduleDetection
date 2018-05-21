@@ -44,7 +44,8 @@ config=config.config
 EPOCHS=100
 InitialEpoch=0
 data_dir='/data/lungCT/luna/temp/luna_npy' #including  *_clean.npy and *_label.npy
-model_dir='/data/lungCT/luna/temp/model6/'
+split_dir='splitdata'
+model_dir='/data/lungCT/luna/temp/model9/'
 
 
 #command line parameter setting
@@ -149,9 +150,9 @@ callback_list = [checkpoint,lr_scheduler]
 
 
 # numbers of sample correspoding train and val
-train_dataset=data.DataBowl3Detector(data_dir,config,phase='train')
+train_dataset=data.DataBowl3Detector(data_dir,split_dir,config,phase='train')
 train_samples=train_dataset.__len__()
-val_dataset=data.DataBowl3Detector(data_dir,config,phase='val')
+val_dataset=data.DataBowl3Detector(data_dir,split_dir,config,phase='val')
 val_samples=val_dataset.__len__()
 
 
@@ -160,7 +161,7 @@ val_samples=val_dataset.__len__()
 #read data and processing by CPU ,during training.
 #Don't load all data into memory at onece!
 def generate_arrays(phase,shuffle=True):
-    dataset=data.DataBowl3Detector(data_dir,config,phase=phase)
+    dataset=data.DataBowl3Detector(data_dir,split_dir,config,phase=phase)
     n_samples=dataset.__len__()
     ids=np.array(np.arange(n_samples))
 

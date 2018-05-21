@@ -18,8 +18,8 @@ save_path='/data/lungCT/luna/temp/my_anno.csv'
 dataset=data.DataBowl3Detector(data_dir,config.config,phase='test')
 
 
-labels=dataset.sample_bboxes
-uids=dataset.uids[100:300]
+labels=dataset.sample_bboxes[780:880]
+uids=dataset.uids[780:880]
 
 
 
@@ -27,6 +27,7 @@ df=pd.DataFrame(columns=['seriesuid','coordX','coordY','coordZ','diameter_mm'])
 count=0
 
 for index,uid in enumerate(uids):
+    print (index)
     label=labels[index]
     if len(label)==0:
         continue

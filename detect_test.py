@@ -33,8 +33,11 @@ import layers
 #set_session(tf.Session(config=tfconfig))
 
 
-SAVED_MODEL='/data/lungCT/luna/temp/model4/epoch:096-trainloss:(0.512-0.170)-valloss:(0.734-0.408).h5'
+
+data_phase='val'
+SAVED_MODEL='/data/lungCT/luna/temp/model6/epoch:089-trainloss:(0.124-0.062)-valloss:(0.515-0.452).h5'
 data_dir='/data/lungCT/luna/temp/luna_npy'
+split_dir='splitdata'
 ctinfo_path='preprocessing/ct_info.csv'
 pred_save_dir='/data/lungCT/luna/temp/submit'
 if not os.path.exists(pred_save_dir):
@@ -71,18 +74,20 @@ else:
     raise Exception("no model")
 
 
-dataset=data.DataBowl3Detector(data_dir,config.config,phase='test')
+dataset=data.DataBowl3Detector(data_dir,split_dir,config.config,phase=data_phase)
 get=layers.GetPBB(data.config)
 
+uids=dataset.uids
+len_uids=len(uids)
 labels=dataset.sample_bboxes
 
 pred_df=pd.DataFrame(columns=['seriesuid','coordX','coordY','coordZ','probability'])
 count=0
 
-for index in range(100,300):
+for index in range(len_uids):
     time_s=time.time()
     
-    image,patch_box,bboxes = dataset.test_patches(index)
+    image,patch_box,bboxes = dataset.package_patches(index)
     uid=dataset.uids[index]
     origin=uid_origin_dict[uid]
     
@@ -94,7 +99,7 @@ for index in range(100,300):
 #        print (i)
         sx,sy,sz=start
    
-        pred=model.predict(patch)
+        pred=model.predict([patch,coord])
         pred=pred[0]
         pred[:,:,:,:,0]=sigmoid(pred[:,:,:,:,0])
          
@@ -111,13 +116,13 @@ for index in range(100,300):
     box=np.concatenate(box)
     box_nms=layers.nms(box,0.6)
     time_e=time.time()
-    print ('CT-%03d, nodules:%2d, pos:%3d, pos_nms:%3d, patches:%3d, shape-[%3d,%3d,%3d], time:%.1fs'%(index,bboxes.shape[0],box.shape[0],box_nms.shape[0],len(patch_box),xsize,ysize,zsize,time_e-time_s))
+    print ('%s-%03d, nodules:%2d, pos:%3d, pos_nms:%3d, patches:%3d, shape-[%3d,%3d,%3d], time:%.1fs'%(data_phase,index,bboxes.shape[0],box.shape[0],box_nms.shape[0],len(patch_box),xsize,ysize,zsize,time_e-time_s))
 
     for entry in box_nms:
         pred_df.loc[count]=[uid,entry[1],entry[2],entry[3],entry[0]]
         count+=1
 
-save_path=os.path.join(pred_save_dir,str(int(time.time()))+'.csv')
+save_path=os.path.join(pred_save_dir,str(int(time.time()))+'-'+data_phase+'.csv')
 pred_df.to_csv(save_path,index=None)  
 print ("output %d postive predictions"%pred_df.shape[0])
 print ("csv file saved in %s"%save_path)

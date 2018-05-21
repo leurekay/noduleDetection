@@ -23,5 +23,9 @@ def generate_num(n_samples,shuffle=True):
         
 
 box=[]
-for i in generate_num(20):
-    box.append(i)
+#for i in generate_num(20):
+#    box.append(i)
+    
+    
+path='/data/lungCT/luna/temp/luna_npy/1.3.6.1.4.1.14519.5.2.1.6279.6001.170706757615202213033480003264_label.npy'
+aa=np.load(path)
