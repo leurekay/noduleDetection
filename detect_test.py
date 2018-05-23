@@ -13,6 +13,7 @@ from keras.backend.tensorflow_backend import set_session
 
 import os
 import time
+import argparse
 
 import numpy as np
 import pandas as pd
@@ -28,18 +29,40 @@ import config
 import layers
 
 
+
 #tfconfig = tf.ConfigProto(device_count={'cpu':0})
-#tfconfig.gpu_options.allow_growth = True
-#set_session(tf.Session(config=tfconfig))
+tfconfig = tf.ConfigProto(allow_soft_placement=True)
+tfconfig.gpu_options.allow_growth = True
+set_session(tf.Session(config=tfconfig))
+
+
+#load config
+config=config.config
 
 
 
-data_phase='val'
-SAVED_MODEL='/data/lungCT/luna/temp/model6/epoch:089-trainloss:(0.124-0.062)-valloss:(0.515-0.452).h5'
-data_dir='/data/lungCT/luna/temp/luna_npy'
-split_dir='splitdata'
-ctinfo_path='preprocessing/ct_info.csv'
-pred_save_dir='/data/lungCT/luna/temp/submit'
+
+
+#command line parameter setting
+parser = argparse.ArgumentParser()
+parser.add_argument('--phase', default='val', type=str, 
+                    help='train,val,test')
+parser.add_argument('--model', default='/data/lungCT/luna/temp/model6/epoch:089-trainloss:(0.124-0.062)-valloss:(0.515-0.452).h5',
+                    type=str, help='model path')
+
+args = parser.parse_args()
+
+
+data_phase=args.phase
+SAVED_MODEL=args.model
+
+
+nms_th=0.6
+pos_th=0.2
+data_dir=config['data_prep_dir']
+split_dir=config['valsplit_dir']
+ctinfo_path=config['ctinfo_path']
+pred_save_dir=config['pred_save_dir']
 if not os.path.exists(pred_save_dir):
     os.makedirs(pred_save_dir)
 
@@ -57,12 +80,6 @@ def sigmoid(x):
 
 
 
-nms_th=0.6
-iou_th=0.3
-
-
-
-
 
 
 
@@ -74,7 +91,7 @@ else:
     raise Exception("no model")
 
 
-dataset=data.DataBowl3Detector(data_dir,split_dir,config.config,phase=data_phase)
+dataset=data.DataBowl3Detector(data_dir,split_dir,config,phase=data_phase)
 get=layers.GetPBB(data.config)
 
 uids=dataset.uids
@@ -103,7 +120,7 @@ for index in range(len_uids):
         pred=pred[0]
         pred[:,:,:,:,0]=sigmoid(pred[:,:,:,:,0])
          
-        pos_pred=get.__call__(pred,0.2)
+        pos_pred=get.__call__(pred,pos_th)
     #    pos_pred=layers.nms(pos_pred,nms_th)
         pos_pred[:,1]+=sx
         pos_pred[:,2]+=sy
@@ -114,7 +131,7 @@ for index in range(len_uids):
 #        pos_pred[:,3]+=origin[2]
         box.append(pos_pred)
     box=np.concatenate(box)
-    box_nms=layers.nms(box,0.6)
+    box_nms=layers.nms(box,nms_th)
     time_e=time.time()
     print ('%s-%03d, nodules:%2d, pos:%3d, pos_nms:%3d, patches:%3d, shape-[%3d,%3d,%3d], time:%.1fs'%(data_phase,index,bboxes.shape[0],box.shape[0],box_nms.shape[0],len(patch_box),xsize,ysize,zsize,time_e-time_s))
 

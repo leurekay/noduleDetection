@@ -43,9 +43,9 @@ config=config.config
 
 EPOCHS=100
 InitialEpoch=0
-data_dir='/data/lungCT/luna/temp/luna_npy' #including  *_clean.npy and *_label.npy
-split_dir='splitdata'
-model_dir='/data/lungCT/luna/temp/model9/'
+data_dir=config['data_prep_dir'] #including  *_clean.npy and *_label.npy
+split_dir=config['valsplit_dir']
+model_dir=config['model_dir']
 
 
 #command line parameter setting
