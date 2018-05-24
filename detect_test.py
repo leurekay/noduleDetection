@@ -47,24 +47,41 @@ config=config.config
 parser = argparse.ArgumentParser()
 parser.add_argument('--phase', default='val', type=str, 
                     help='train,val,test')
-parser.add_argument('--model', default='/data/lungCT/luna/temp/model6/epoch:089-trainloss:(0.124-0.062)-valloss:(0.515-0.452).h5',
-                    type=str, help='model path')
+parser.add_argument('--model', default='model6',
+                    type=str, help='model')
+parser.add_argument('--epoch', default=89,
+                    type=int, help='epoch')
 
 args = parser.parse_args()
 
-
 data_phase=args.phase
-SAVED_MODEL=args.model
+model_n=args.model
+epoch=args.epoch
 
 
 nms_th=0.6
 pos_th=0.2
 data_dir=config['data_prep_dir']
-split_dir=config['valsplit_dir']
 ctinfo_path=config['ctinfo_path']
 pred_save_dir=config['pred_save_dir']
 if not os.path.exists(pred_save_dir):
     os.makedirs(pred_save_dir)
+model_dir='/data/lungCT/luna/temp/'
+
+
+model_dir=os.path.join(model_dir,model_n)
+if not os.path.exists(model_dir):
+    raise Exception('Directory %s does not exist!'%model_n)
+filelist=os.listdir(model_dir)
+filelist=[x for x in filelist if x.endswith('.h5')]
+filelist.sort()
+epoch_id_list=map(lambda x:int(x.split('-')[0].split(':')[-1]),filelist)
+epoch_file_dict=dict(zip(epoch_id_list,filelist))
+if epoch not in epoch_file_dict:
+    raise Exception('epoch-%d does not exist in %s!'%(epoch,model_n))
+
+filename=epoch_file_dict[epoch]
+model_path=os.path.join(model_dir,filename)
 
 ctinfo=pd.read_csv(ctinfo_path,index_col='seriesuid')
 uid_origin_dict={}
@@ -72,6 +89,7 @@ uids=list(ctinfo.index)
 for uid in uids:
     origin=list(ctinfo.loc[uid])[:3]
     uid_origin_dict[uid]=origin
+   
     
 def sigmoid(x):
     return 1/(1+np.exp(-x))
@@ -80,18 +98,15 @@ def sigmoid(x):
 
 
 
-
-
-
 #load model
-if os.path.exists(SAVED_MODEL):
-    print ("*************************\n restore model from %s\n*************************"%SAVED_MODEL)
-    model=load_model(SAVED_MODEL,compile=False)  
+if os.path.exists(model_path):
+    print ("****************************************************\n restore model from %s\n****************************************************"%model_path)
+    model=load_model(model_path,compile=False)  
 else:
     raise Exception("no model")
 
 
-dataset=data.DataBowl3Detector(data_dir,split_dir,config,phase=data_phase)
+dataset=data.DataBowl3Detector(data_dir,config,phase=data_phase)
 get=layers.GetPBB(data.config)
 
 uids=dataset.uids
@@ -139,7 +154,7 @@ for index in range(len_uids):
         pred_df.loc[count]=[uid,entry[1],entry[2],entry[3],entry[0]]
         count+=1
 
-save_path=os.path.join(pred_save_dir,str(int(time.time()))+'-'+data_phase+'.csv')
+save_path=os.path.join(pred_save_dir,model_n+'-epoch'+str(epoch)+'-'+data_phase+'.csv')
 pred_df.to_csv(save_path,index=None)  
 print ("output %d postive predictions"%pred_df.shape[0])
 print ("csv file saved in %s"%save_path)

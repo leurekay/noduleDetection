@@ -34,7 +34,7 @@ config['data_prep_dir']='/data/lungCT/luna/temp/luna_npy'
 config['valsplit_dir']='splitdata'
 config['train_val_test_ratio']=[0.8,0.1,0.1]
 config['data_shuffle']=False
-config['model_dir']='/data/lungCT/luna/temp/model9/'
+config['model_dir']='/data/lungCT/luna/temp/model11/'
 
 config['ctinfo_path']='preprocessing/ct_info.csv'
 config['pred_save_dir']='/data/lungCT/luna/temp/submit'

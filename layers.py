@@ -75,10 +75,10 @@ def n_net():
     x=concatenate([coord,r2,x])
     x=res_block(x,128,(1,1,1),(1,1,1))
     x= Conv3D(64, (3, 3,3), strides=(1,1,1),padding='same', )(x)
-    x=LeakyReLU(alpha=0.3)(x)
+    x=LeakyReLU(alpha=0.1)(x)
     x=Dropout(0.5)(x)
     x= Conv3D(15, (3, 3,3), strides=(1,1,1),padding='same', )(x)
-    x=LeakyReLU(alpha=0.3)(x)
+    x=LeakyReLU(alpha=0.1)(x)
     x= Reshape((32,32,32,3,5))(x)
     
     #predictions = Dense(10, activation='softmax')(x)

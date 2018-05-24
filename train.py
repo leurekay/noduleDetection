@@ -14,6 +14,7 @@ import layers
 
 import time
 import os
+import shutil
 from PIL import Image
 
 import tensorflow as tf
@@ -44,7 +45,6 @@ config=config.config
 EPOCHS=100
 InitialEpoch=0
 data_dir=config['data_prep_dir'] #including  *_clean.npy and *_label.npy
-split_dir=config['valsplit_dir']
 model_dir=config['model_dir']
 
 
@@ -52,7 +52,7 @@ model_dir=config['model_dir']
 parser = argparse.ArgumentParser()
 parser.add_argument('--startepoch', default=0, type=int, 
                     help='manual epoch number (useful on restarts)')
-#parser.add_argument('--savedir', default='weights', type=str)
+#parser.add_argument('--savedir', default=model_dir, type=str)
 args = parser.parse_args()
 InitialEpoch=args.startepoch
 
@@ -68,12 +68,19 @@ if not os.path.exists(model_dir):
     epoch_file_dict={}
 else:
     saved_models=os.listdir(model_dir)
+    saved_models=[x for x in saved_models if x.endswith('.h5')]
     epoch_ids=map(lambda x : int(x.split('-')[0].split(':')[-1]),saved_models)
     epoch_file_dict=zip(epoch_ids,saved_models)
     epoch_file_dict=dict(epoch_file_dict)
 
 
+#copy config file to model dir
+timstamp=int(time.time())
+config_backup=os.path.join(model_dir,str(InitialEpoch)+'.config')
+layers_backup=os.path.join(model_dir,str(InitialEpoch)+'.layers')
 
+shutil.copy('config.py',config_backup)
+shutil.copy('layers.py',layers_backup)
 
 
 
@@ -107,7 +114,7 @@ recall=layers.recall
 myloss=layers.myloss
 
 #compile
-model.compile(optimizer='adam',
+model.compile(optimizer='sgd',
               loss=myloss,
               metrics=[loss_cls,recall])
 
@@ -126,8 +133,6 @@ checkpoint=ModelCheckpoint(filepath=os.path.join(model_dir,'epoch:{epoch:03d}-tr
                                 period=1)
 
 #controled learning rate for callback  
-
-
 def lr_decay(epoch):
     lr=0.001
     if epoch>2:
@@ -137,8 +142,9 @@ def lr_decay(epoch):
     if epoch>10:
         lr=0.00001
     return lr
-
 lr_scheduler = LearningRateScheduler(lr_decay)
+
+
 #callback list
 callback_list = [checkpoint,lr_scheduler]
 
@@ -150,9 +156,9 @@ callback_list = [checkpoint,lr_scheduler]
 
 
 # numbers of sample correspoding train and val
-train_dataset=data.DataBowl3Detector(data_dir,split_dir,config,phase='train')
+train_dataset=data.DataBowl3Detector(data_dir,config,phase='train')
 train_samples=train_dataset.__len__()
-val_dataset=data.DataBowl3Detector(data_dir,split_dir,config,phase='val')
+val_dataset=data.DataBowl3Detector(data_dir,config,phase='val')
 val_samples=val_dataset.__len__()
 
 
@@ -161,7 +167,7 @@ val_samples=val_dataset.__len__()
 #read data and processing by CPU ,during training.
 #Don't load all data into memory at onece!
 def generate_arrays(phase,shuffle=True):
-    dataset=data.DataBowl3Detector(data_dir,split_dir,config,phase=phase)
+    dataset=data.DataBowl3Detector(data_dir,config,phase=phase)
     n_samples=dataset.__len__()
     ids=np.array(np.arange(n_samples))
 

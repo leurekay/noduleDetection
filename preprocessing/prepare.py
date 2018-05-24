@@ -409,48 +409,56 @@ def batch_process_luna(luna_data_dir,savepath,luna_segment_dir,annotations_path)
     
 if __name__=='__main__':
     
-    subsets=[0,1,2,3,4,5,6,7,8,9]
-#    subsets=[0]
-    subsets=map(lambda x : 'subset'+str(x),subsets)
-    
-    for subset in subsets:
-        
-        luna_segment_dir = '/data/lungCT/luna/seg-lungs-LUNA16'
-        savepath = '/data/lungCT/luna/temp/luna_npy/'+subset
-        luna_data_dir = '/data/lungCT/luna/'+subset
-        annotations_path='/data/lungCT/luna/annotations.csv'
-        
-        #generate *_clean.npy and *_label.npy
+#    subsets=[0,1,2,3,4,5,6,7,8,9]
+##    subsets=[0]
+#    subsets=map(lambda x : 'subset'+str(x),subsets)
+#    
+#    for subset in subsets:
+#        
+#        luna_segment_dir = '/data/lungCT/luna/seg-lungs-LUNA16'
+#        savepath = '/data/lungCT/luna/temp/luna_npy/'+subset
+#        luna_data_dir = '/data/lungCT/luna/'+subset
+#        annotations_path='/data/lungCT/luna/annotations.csv'
+#        
+#        generate *_clean.npy and *_label.npy
 #        batch_process_luna(luna_data_dir,savepath,luna_segment_dir,annotations_path)
-    
-    
-    
-    save_ctinfo_path=''
-    ct_info_dict={}
-    for subset in subsets:
-        print ('start %s'%subset)
-        luna_data_dir = '/data/lungCT/luna/'+subset
-        file_list=os.listdir(luna_data_dir)
-        file_list=filter(lambda x:x.split('.')[-1]=='mhd' ,file_list)
-        uid_list=[x.split('.mhd')[0] for x in file_list]
-        for i,uid in enumerate(uid_list):
-            if i%20==0:
-                print (i)
-#            if i==20:
-#                break
-            path=os.path.join(luna_data_dir,uid+'.mhd')
-            img,origin,spacing,_=load_itk_image(path)
-            ct_info_dict[uid]=[origin[0],origin[1],origin[2],spacing[0],spacing[1],spacing[2]]
-            
-    pred_df=pd.DataFrame(index=ct_info_dict.keys(),columns=['origin1','origin2','origin3','spacing1','spacing2','spacing3'])
-    for key in ct_info_dict:
-        pred_df.loc[key]=ct_info_dict[key]
-    pred_df.to_csv('ct_info.csv',index_label='seriesuid')
-    
-    print ('the shape of csv is ',pred_df.shape)
-
- 
-    
+#    
+#    
+#    
+#    save_ctinfo_path=''
+#    ct_info_dict={}
+#    for subset in subsets:
+#        print ('start %s'%subset)
+#        luna_data_dir = '/data/lungCT/luna/'+subset
+#        file_list=os.listdir(luna_data_dir)
+#        file_list=filter(lambda x:x.split('.')[-1]=='mhd' ,file_list)
+#        uid_list=[x.split('.mhd')[0] for x in file_list]
+#        for i,uid in enumerate(uid_list):
+#            if i%20==0:
+#                print (i)
+##            if i==20:
+##                break
+#            path=os.path.join(luna_data_dir,uid+'.mhd')
+#            img,origin,spacing,_=load_itk_image(path)
+#            ct_info_dict[uid]=[origin[0],origin[1],origin[2],spacing[0],spacing[1],spacing[2]]
+#            
+#    pred_df=pd.DataFrame(index=ct_info_dict.keys(),columns=['origin1','origin2','origin3','spacing1','spacing2','spacing3'])
+#    for key in ct_info_dict:
+#        pred_df.loc[key]=ct_info_dict[key]
+#    pred_df.to_csv('ct_info.csv',index_label='seriesuid')
+#    
+#    print ('the shape of csv is ',pred_df.shape)
 
     
+    uid='1.3.6.1.4.1.14519.5.2.1.6279.6001.534083630500464995109143618896'
+    annotations_path='/data/lungCT/luna/annotations.csv'
+    path_label='/data/lungCT/luna/temp/luna_npy/'+uid+'_label.npy'
+    
+    path='/data/lungCT/luna/subset0/'+uid+'.mhd'
+    
+    img,origin,spacing,_=load_itk_image(path)
+    
+    label_new=np.load(path_label)
+    df=pd.read_csv(annotations_path)
+    label_initial=df[df.seriesuid==uid]
     

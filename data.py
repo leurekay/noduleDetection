@@ -31,7 +31,7 @@ config=config.config
 
 
 class DataBowl3Detector():
-    def __init__(self, data_dir,split_dir,config, phase = 'train',split_comber=None):
+    def __init__(self, data_dir,config, phase = 'train',split_comber=None):
         assert(phase == 'train' or phase == 'val' or phase == 'test')
         self.phase = phase
         self.max_stride = config['max_stride']       
@@ -50,10 +50,20 @@ class DataBowl3Detector():
 #        idcs = np.load(split_path)
 
 
+        data_dir=os.path.join(data_dir,phase)
+        patient_list=os.listdir(data_dir)
         
-        idcs=np.load(os.path.join(split_dir,phase+'.npy'))
-        idcs=list(idcs)
-        idcs=list(map(lambda x:str(x),idcs))
+        ct_list=filter(lambda x:x.split('_')[-1]=='clean.npy',patient_list)
+        label_list=filter(lambda x:x.split('_')[-1]=='label.npy',patient_list)
+        id_list_by_ct=map(lambda x:x.split('_')[0],ct_list)
+        id_list_by_label=map(lambda x:x.split('_')[0],label_list)
+        id_list=set.intersection(set(id_list_by_ct),set(id_list_by_label))
+        idcs=list(id_list)
+        idcs.sort()
+        
+        
+        
+        
         self.uids=idcs
         self.filenames = [os.path.join(data_dir, '%s_clean.npy' % idx) for idx in idcs]
 
@@ -478,7 +488,7 @@ def collate(batch):
 if __name__=="__main__":
     data_dir='/data/lungCT/luna/temp/luna_npy'
     split_dir='splitdata'
-    data=DataBowl3Detector(data_dir,split_dir,config,phase='val')
+    data=DataBowl3Detector(data_dir,config,phase='val')
     patch,label,coord=data.__getitem__(15)
     start=coord[:,0,0,0]
     end=coord[:,31,31,31]
@@ -493,5 +503,5 @@ if __name__=="__main__":
     length=data.__len__()
     
     
-    data=DataBowl3Detector(data_dir,split_dir,config,phase='test')
+    data=DataBowl3Detector(data_dir,config,phase='test')
     ooxx=data.package_patches(15)

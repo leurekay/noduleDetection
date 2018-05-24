@@ -3,6 +3,7 @@ import math
 import sys
 
 import matplotlib.pyplot as plt
+plt.switch_backend('agg')
 from matplotlib.ticker import ScalarFormatter,LogFormatter,StrMethodFormatter,FixedFormatter
 import sklearn.metrics as skl_metrics
 import numpy as np
@@ -505,14 +506,36 @@ if __name__ == '__main__':
 #    seriesuids_filename           = sys.argv[3]
 #    results_filename              = sys.argv[4]
 #    outputDir                     = sys.argv[5]
+    sys.path.append('../')
+    import argparse
+    from config import config
+    
+    #command line parameter setting
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--submit', default='/data/lungCT/luna/temp/submit/model10-epoch12-val.csv', type=str, 
+                        help='submit result csv file')    
+    
+   
+    args = parser.parse_args()
+    submit_path=args.submit
+    data_phase=None
+    for item in ['train','val','test']:
+        if item in submit_path:
+            data_phase=item
+    if data_phase==None:
+        raise Exception('could not parse the phase(train,val or test) from the filename')
     
     
-    annotations_filename='../splitdata/val_anno.csv'
+    
+   
+
+    
+    annotations_filename=os.path.join(config['data_prep_dir'],data_phase+'/'+data_phase+'_anno.csv')
 #    annotations_filename='/data/lungCT/luna/temp/my_anno.csv'
     annotations_excluded_filename = 'annotations/annotations_excluded.csv'
     seriesuids_filename           = 'annotations/seriesuids.csv'
     
-    results_filename              = '/data/lungCT/luna/temp/submit/1527033159-val.csv'  
+    results_filename              = submit_path
     outputDir                     = results_filename.replace('submit','froc')
     if not os.path.exists(outputDir):
         os.makedirs(outputDir)
