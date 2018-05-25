@@ -66,7 +66,7 @@ ctinfo_path=config['ctinfo_path']
 pred_save_dir=config['pred_save_dir']
 if not os.path.exists(pred_save_dir):
     os.makedirs(pred_save_dir)
-model_dir='/data/lungCT/luna/temp/'
+model_dir='/data/lungCT/luna/temp/savemodel/'
 
 
 model_dir=os.path.join(model_dir,model_n)

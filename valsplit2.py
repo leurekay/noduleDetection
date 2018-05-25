@@ -22,10 +22,10 @@ from  config import config
 
 
 data_dir=config['data_prep_dir']
-shuffle=False
+shuffle=config['data_split_shuffle']
 
-ratio_train=0.8
-ratio_val=0.1
+ratio_train=config['train_val_test_ratio'][0]
+ratio_val=config['train_val_test_ratio'][1]
 
 
 
@@ -71,13 +71,17 @@ for phase in ['train','val','test']:
         dis1=os.path.join(phase_dir,uuid+'_clean.npy')
         src2=os.path.join(data_dir,uuid+'_label.npy')
         dis2=os.path.join(phase_dir,uuid+'_label.npy')
+        src3=os.path.join(data_dir,uuid+'_info.npy')
+        dis3=os.path.join(phase_dir,uuid+'_info.npy')        
         shutil.copy(src1,dis1)
         shutil.copy(src2,dis2)
+        shutil.copy(src3,dis3)
         
         l=np.load(src2)
         if np.all(l==0):
             l=np.array([])
         labels.append(l)
+    print ('=====================================')
 
 
 
