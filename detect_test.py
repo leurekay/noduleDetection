@@ -94,8 +94,13 @@ for uid in uids:
 def sigmoid(x):
     return 1/(1+np.exp(-x))
 
-
-
+def localVoxel_To_globalWorld(label,origin,extend):
+    """
+    input [z,y,x]  same as the input of neual net computing 
+    return [x,y,z] same as the annotation.csv
+    """
+    ret= label+origin+extend
+    return ret[[2,1,0]]
 
 
 #load model
@@ -119,9 +124,9 @@ count=0
 for index in range(len_uids):
     time_s=time.time()
     
-    image,patch_box,bboxes = dataset.package_patches(index)
+    image,patch_box,bboxes,origin,extend = dataset.package_patches(index)
     uid=dataset.uids[index]
-    origin=uid_origin_dict[uid]
+#    origin=uid_origin_dict[uid]
     
     _,xsize,ysize,zsize,_=image.shape
  
@@ -147,8 +152,12 @@ for index in range(len_uids):
         box.append(pos_pred)
     box=np.concatenate(box)
     box_nms=layers.nms(box,nms_th)
+#    box_nms_world=localVoxel_To_globalWorld(box_nms[1:],origin,extend)
+#    box_nms_world=np.array([box_nms[0]]+box_nms_world.tolist())
     time_e=time.time()
-    print ('%s-%03d, nodules:%2d, pos:%3d, pos_nms:%3d, patches:%3d, shape-[%3d,%3d,%3d], time:%.1fs'%(data_phase,index,bboxes.shape[0],box.shape[0],box_nms.shape[0],len(patch_box),xsize,ysize,zsize,time_e-time_s))
+    maxprob=-9.0 if len(box_nms)==0 else box_nms[0][0]
+    maxdiameter=0 if bboxes.shape[0]==0 else max(bboxes[:,3])
+    print ('%s-%03d, nodules:%2d, max_D:%.2f, maxprob:%.2f, pos:%3d, pos_nms:%3d, patches:%3d, shape-[%3d,%3d,%3d], time:%.1fs'%(data_phase,index,bboxes.shape[0],maxdiameter,maxprob,box.shape[0],box_nms.shape[0],len(patch_box),xsize,ysize,zsize,time_e-time_s))
 
     for entry in box_nms:
         pred_df.loc[count]=[uid,entry[1],entry[2],entry[3],entry[0]]

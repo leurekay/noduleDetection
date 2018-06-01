@@ -69,14 +69,21 @@ class DataBowl3Detector():
 
         
         labels = []
+        origins=[]
+        extendboxes=[]
         
         for idx in idcs:
             l = np.load(os.path.join(data_dir, '%s_label.npy' %idx))
             if np.all(l==0):
                 l=np.array([])
             labels.append(l)
+            origin,extend,_=np.load(os.path.join(data_dir, '%s_info.npy' %idx))
+            origins.append(origin)
+            extendboxes.append(extend)
 
         self.sample_bboxes = labels
+        self.sample_origins=origins
+        self.sample_extendboxes=extendboxes
         if self.phase != 'test':
             self.bboxes = []
             for i, l in enumerate(labels):
@@ -177,6 +184,8 @@ class DataBowl3Detector():
         _,xsize,ysize,zsize,_=imgs.shape
         
         bboxes = self.sample_bboxes[idx]
+        origin=self.sample_origins[idx]
+        extend=self.sample_extendboxes[idx]
         image_shape = imgs.shape[1:4]
 
         nxyz=np.ceil(image_shape/crop_size.astype('float'))
@@ -208,7 +217,7 @@ class DataBowl3Detector():
                     coord=np.expand_dims(coord,axis=0)                    
                     patch_box.append([patch,coord,start])
                     
-        return imgs,patch_box,bboxes
+        return imgs,patch_box,bboxes,origin,extend
         
 
 
@@ -503,5 +512,5 @@ if __name__=="__main__":
     length=data.__len__()
     
     
-    data=DataBowl3Detector(data_dir,config,phase='test')
+    data=DataBowl3Detector(data_dir,config,phase='val')
     ooxx=data.package_patches(15)

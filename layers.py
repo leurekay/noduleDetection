@@ -75,10 +75,10 @@ def n_net():
     x=concatenate([coord,r2,x])
     x=res_block(x,128,(1,1,1),(1,1,1))
     x= Conv3D(64, (3, 3,3), strides=(1,1,1),padding='same', )(x)
-    x=LeakyReLU(alpha=0.5)(x)
+    x=LeakyReLU(alpha=0.1)(x)
     x=Dropout(0.5)(x)
     x= Conv3D(15, (3, 3,3), strides=(1,1,1),padding='same', )(x)
-    x=LeakyReLU(alpha=0.5)(x)
+    x=LeakyReLU(alpha=0.1)(x)
     x= Reshape((32,32,32,3,5))(x)
     
     #predictions = Dense(10, activation='softmax')(x)
@@ -138,8 +138,40 @@ def n_net2():
 
 
 
+def fpr_net():
+    input_img = Input(shape=(32,32,32,1))
 
-
+    #first 2 conv layers
+    x = Conv3D(32, (3, 3,3), padding='same', activation='relu')(input_img)
+    x = Conv3D(32, (3, 3,3), strides=(1,1,1),padding='same', activation='relu')(x)
+    x=MaxPooling3D(pool_size=(2, 2, 2), strides=(2,2,2))(x)
+    x=Dropout(0.5)(x)
+    
+    
+    
+#    x = Conv3D(64, (3, 3,3), padding='same', activation='relu')(x)
+#    x = Conv3D(64, (3, 3,3), strides=(1,1,1),padding='same', activation='relu')(x)
+#    x=MaxPooling3D(pool_size=(2, 2, 2), strides=(2,2,2))(x)
+#    x=Dropout(0.5)(x)
+#    
+#
+#    x = Conv3D(128, (3, 3,3), padding='same', activation='relu')(x)
+#    x = Conv3D(128, (3, 3,3), strides=(1,1,1),padding='same', activation='relu')(x)
+#    x=MaxPooling3D(pool_size=(2, 2, 2), strides=(2,2,2))(x)
+#    x=Dropout(0.5)(x)
+    
+    x=Flatten()(x)
+    
+#    x=Dense(1024)(x)
+#    x=Dropout(0.5)(x)
+    
+    x=Dense(512)(x)
+    x=Dropout(0.5)(x)
+    
+    x=Dense(2,activation='softmax')(x)
+   
+    model=Model(inputs=input_img,outputs=x )
+    return model
 
 
 
@@ -416,43 +448,45 @@ def recall(y_true, y_pred):
 
     
 if __name__=='__main__':
-    model=n_net()
+    model=fpr_net()
 
     model.summary()
     
-    plot_model(model, to_file='images/model3d.png',show_shapes=True)
+    plot_model(model, to_file='images/fpr_model.png',show_shapes=True)
     
     
     
-    import data 
-    
-    data_dir='/data/lungCT/luna/temp/luna_npy'
-    dataset=data.DataBowl3Detector(data_dir,data.config)
-    patch,label,coord=dataset.__getitem__(46)
-
-    y_true=tf.constant(label)
-    
-    a=myloss(y_true,y_true)
-    
- 
-#    hard=hard_mining(a,a,4)
-    
-    init=tf.global_variables_initializer()
-    sess=tf.Session()
-    sess.run(init)
-    aa=sess.run(a)
-    
-#    hh=sess.run(hard)
-    
-    
-    get=GetPBB(data.config)
-    table=get.__call__(label,0.5)
-    tabel_before_transform=label.reshape([-1,5])
-    
-    index=np.argsort(-table[:,0])
-    tabel_before_transform=tabel_before_transform[index]
-    table=table[index]
-    
-#    boxes=nms(table,0.5)
+# =============================================================================
+#     import data 
+#     
+#     data_dir='/data/lungCT/luna/temp/luna_npy'
+#     dataset=data.DataBowl3Detector(data_dir,data.config)
+#     patch,label,coord=dataset.__getitem__(46)
+# 
+#     y_true=tf.constant(label)
+#     
+#     a=myloss(y_true,y_true)
+#     
+#  
+# #    hard=hard_mining(a,a,4)
+#     
+#     init=tf.global_variables_initializer()
+#     sess=tf.Session()
+#     sess.run(init)
+#     aa=sess.run(a)
+#     
+# #    hh=sess.run(hard)
+#     
+#     
+#     get=GetPBB(data.config)
+#     table=get.__call__(label,0.5)
+#     tabel_before_transform=label.reshape([-1,5])
+#     
+#     index=np.argsort(-table[:,0])
+#     tabel_before_transform=tabel_before_transform[index]
+#     table=table[index]
+#     
+# #    boxes=nms(table,0.5)
+# =============================================================================
     
     

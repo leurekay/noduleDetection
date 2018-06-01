@@ -512,7 +512,7 @@ if __name__ == '__main__':
     
     #command line parameter setting
     parser = argparse.ArgumentParser()
-    parser.add_argument('--submit', default='/data/lungCT/luna/temp/submit/model10-epoch12-val.csv', type=str, 
+    parser.add_argument('--submit', default='/data/lungCT/luna/temp/submit/model6-epoch46-train.csv', type=str, 
                         help='submit result csv file')    
     
    

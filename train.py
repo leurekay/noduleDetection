@@ -48,16 +48,15 @@ data_dir=config['data_prep_dir'] #including  *_clean.npy and *_label.npy
 model_dir=config['model_dir']
 
 
+
 #command line parameter setting
 parser = argparse.ArgumentParser()
-parser.add_argument('--startepoch', default=0, type=int, 
+parser.add_argument('--startepoch', default=InitialEpoch, type=int, 
                     help='manual epoch number (useful on restarts)')
-#parser.add_argument('--savedir', default=model_dir, type=str)
+parser.add_argument('--modeldir', default=model_dir, type=str)
 args = parser.parse_args()
 InitialEpoch=args.startepoch
-
-
-
+model_dir=args.modeldir
 
  
         
@@ -114,7 +113,7 @@ recall=layers.recall
 myloss=layers.myloss
 
 #compile
-model.compile(optimizer='sgd',
+model.compile(optimizer='adam',
               loss=myloss,
               metrics=[loss_cls,recall])
 

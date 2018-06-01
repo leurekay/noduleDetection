@@ -414,8 +414,8 @@ def batch_process_luna(luna_data_dir,savepath,luna_segment_dir,annotations_path)
     
 if __name__=='__main__':
     
-    subsets=[0,1,2,3,4,5,6,7,8,9]
-#    subsets=[0]
+#    subsets=[0,1,2,3,4,5,6,7,8,9]
+    subsets=[]
     subsets=map(lambda x : 'subset'+str(x),subsets)
     
     for subset in subsets:
