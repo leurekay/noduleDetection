@@ -22,9 +22,27 @@ import config
 config=config.config
 
 
+import sys
+sys.path.append('preprocessing')
+import prepare
 
 
-
+def batch_transform(x,info,clean_img_shape):
+    # input :z-y-x order
+    #output: z-y-x order
+    box=[]
+    shape=info[2]
+    for xx in x:
+        xxx=prepare.simple_label_transform(xx,info)[:3]
+        
+        #set the points outside the image to nan.
+        for i in range(len(shape)):
+            if xxx[0,i]<=0 or xxx[0,i]>=clean_img_shape[i]:
+                xxx[0,i]=np.nan
+                
+        box.append(xxx)
+#        print clean_img_shape
+    return np.concatenate(box)
 
 
 
@@ -65,15 +83,26 @@ class FPR():
      
         
         for idx in idcs:
-            origin,extend,_=np.load(os.path.join(data_dir, '%s_info.npy' %idx))
-         
+            clean_img=np.load(os.path.join(data_dir, '%s_clean.npy' %idx))
+            clean_img_shape=clean_img.shape[1:]
+            info=np.load(os.path.join(data_dir, '%s_info.npy' %idx))
+            origin=info[0]
+            extend=info[3]
             origin=np.flip(origin,0)
             extend=np.flip(extend,0)
             
-            df_candidates.loc[df_candidates['seriesuid']==idx,['coordX','coordY','coordZ']]-=(origin+extend)
+            batches= df_candidates.loc[df_candidates['seriesuid']==idx,['coordX','coordY','coordZ']]
+            
+            batches=batches.values[:,::-1]
+            
+            batches=batch_transform(batches,info,clean_img_shape)[:,:-1]
+            batches=batches[:,::-1]
+            
+            df_candidates.loc[df_candidates['seriesuid']==idx,['coordX','coordY','coordZ']]=batches
         
-        df_candidates.loc[((df_candidates['coordX']<0) | (df_candidates['coordY']<0) | (df_candidates['coordZ']<0)),['class']]=np.nan
+#        df_candidates.loc[((df_candidates['coordX']<0) | (df_candidates['coordY']<0) | (df_candidates['coordZ']<0)),['class']]=np.nan
         df_candidates.dropna(inplace=True)
+            
         self.df_candidates=df_candidates
         
         self.pos=df_candidates[df_candidates['class']==1]
@@ -82,7 +111,7 @@ class FPR():
         self.n_pos=self.pos.shape[0]
         self.n_neg=self.neg.shape[0]
     def get_item(self,isPos):
-        cube_size=np.array([32,32,32])
+        cube_size=np.array([32,32,32],'int')
         
         if isPos:
             index=np.random.randint(0,self.n_pos)
@@ -96,15 +125,21 @@ class FPR():
         img=np.load(path)
         img_shape=img.shape
         
+        
         xyz=entry[1:4]
         xyz=list(reversed(xyz))
         xyz=np.array(xyz,'int')
         start=xyz-cube_size/2
+        start=start.astype('int')
         comp=np.vstack((start,np.array([0,0,0])))
         start=np.max(comp,axis=0)
         end=start+cube_size
+        end=end.astype('int')
         comp1=np.vstack((end,np.array(img_shape[1:])))
         end=np.min(comp1,axis=0)
+#        print (end)
+        
+        
         
         cube=img[:,start[0]:end[0],start[1]:end[1],start[2]:end[2]]
         delta=32-(end-start)
@@ -112,9 +147,11 @@ class FPR():
         cube=np.pad(cube, ((0,0),(0,delta[0]),(0,delta[1]),(0,delta[2])), 
                              'constant', constant_values=170)
         
-#        print (xyz)
-#        print (start)
-#        print (end)
+        cube = (cube.astype(np.float32)-128)/128
+        
+        if cube.shape != (1,32,32,32):
+            raise Exception(img_shape,start,end,entry)
+        
         return cube
             
         
@@ -140,13 +177,18 @@ class FPR():
 
 if __name__=='__main__':
      data_dir='/data/lungCT/luna/temp/luna_npy'
-     label_path='/data/lungCT/luna/pull_aiserver/candidates.csv'    
-     data=FPR(data_dir,label_path,config)
+     label_path='/data/lungCT/luna/candidates.csv'   
+     data=FPR(data_dir,label_path,config,phase='train')
 
      df=data.df_candidates
      a=df[((df['coordX']<0) | (df['coordY']<0) | (df['coordZ']<0))]    
-    
-    
+     ooxx=data.get_item(True)
+     
+     
+     for i in range(1000000):
+         p=data.get_item(np.random.choice([True,False]))
+         if i%100==0:
+             print (i)
     
 # =============================================================================
 #     data_dir='/data/lungCT/luna/temp/luna_npy'

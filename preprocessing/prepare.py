@@ -265,9 +265,14 @@ def savenpy_luna(id,annos,luna_segment,luna_data,savepath):
         np.save(os.path.join(savepath,name+'_label.npy'),label2)
     
     if isInfo:
-        origin_entendbox=np.concatenate([origin.reshape([1,-1]),extendbox.T])
+        if isflip:
+            flipinfo=np.array([[1,1,1]])
+        else:
+            flipinfo=np.array([[0,0,0]])
+        origin_entendbox=np.concatenate([origin.reshape([1,-1]),spacing.reshape([1,-1]),np.array([Mask.shape]),extendbox.T,flipinfo])
         np.save(os.path.join(savepath,name+'_info.npy'),origin_entendbox)
     print(name)
+#    print Mask.shape
 #    print origin_entendbox
 
 
@@ -412,61 +417,111 @@ def batch_process_luna(luna_data_dir,savepath,luna_segment_dir,annotations_path)
     pool.join()
     print('complete %s'%savepath)        
     
+    
+    
+   
+def simple_label_transform(zyx,info):
+    origin,spacing,mask_shape,_,_,flipinfo=info
+    extendbox=info[3:5].T
+    if flipinfo[0]:
+        isflip=True
+    else:
+        isflip=False
+    
+    resolution=np.array([1,1,1])
+    label = []
+    pos = worldToVoxelCoord(zyx,origin=origin,spacing=spacing)
+    if isflip:
+        pos[1:] = mask_shape[1:3]-pos[1:]
+    label.append(np.concatenate([pos,np.array([9999])/spacing[1]]))
+        
+    label = np.array(label)
+    if len(label)==0:
+        label2 = np.array([[0,0,0,0]])
+    else:
+        label2 = np.copy(label).T
+        label2[:3] = label2[:3]*np.expand_dims(spacing,1)/np.expand_dims(resolution,1)
+        label2[3] = label2[3]*spacing[1]/resolution[1]
+        label2[:3] = label2[:3]-np.expand_dims(extendbox[:,0],1)
+        label2 = label2[:4].T
+    return label2
+    
+    
+    
 if __name__=='__main__':
     
-#    subsets=[0,1,2,3,4,5,6,7,8,9]
-    subsets=[]
-    subsets=map(lambda x : 'subset'+str(x),subsets)
+##    subsets=[0,1,2,3,4,5,6,7,8,9]
+#    subsets=[0]
+#    subsets=map(lambda x : 'subset'+str(x),subsets)
+#    
+#    for subset in subsets:
+#        
+#        luna_segment_dir = '/data/lungCT/luna/seg-lungs-LUNA16'
+#        savepath = '/data/lungCT/luna/temp/luna_npy/'+subset
+#        luna_data_dir = '/data/lungCT/luna/'+subset
+#        annotations_path='/data/lungCT/luna/annotations.csv'
+#        
+#        #generate *_clean.npy and *_label.npy
+#        batch_process_luna(luna_data_dir,savepath,luna_segment_dir,annotations_path)
+#
+#    
+#    
+#    path='/data/lungCT/luna/subset8/1.3.6.1.4.1.14519.5.2.1.6279.6001.225515255547637437801620523312.mhd'
+#    
+#    ooxx=load_itk_image(path)
+#    
+#    
+#    with open(path) as f:
+#        contents = f.readlines()   
     
-    for subset in subsets:
-        
-        luna_segment_dir = '/data/lungCT/luna/seg-lungs-LUNA16'
-        savepath = '/data/lungCT/luna/temp/luna_npy/'+subset
-        luna_data_dir = '/data/lungCT/luna/'+subset
-        annotations_path='/data/lungCT/luna/annotations.csv'
-        
-        #generate *_clean.npy and *_label.npy
-        batch_process_luna(luna_data_dir,savepath,luna_segment_dir,annotations_path)
+    
+    
+    
+    
+    
 
+    n=31
+    datadir='/data/lungCT/luna/subset1/'
+    listfiles=os.listdir(datadir)
+    listfiles=[x for x in listfiles if x.endswith('.mhd')]
+    listuids=[x.split('.mhd')[0] for x in listfiles]
+    uid=listuids[n]
+    annotations_path='/data/lungCT/luna/annotations.csv'
+    path_label='/data/lungCT/luna/temp/luna_npy/'+uid+'_label.npy'
+    mask_path=os.path.join('/data/lungCT/luna/seg-lungs-LUNA16',uid+'.mhd')
+    
+    path='/data/lungCT/luna/subset0/'+uid+'.mhd'
+    npy_img_path=os.path.join('/data/lungCT/luna/temp/luna_npy/',uid+'_clean.npy')
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-#    n=31
-#    datadir='/data/lungCT/luna/subset0/'
-#    listfiles=os.listdir(datadir)
-#    listfiles=[x for x in listfiles if x.endswith('.mhd')]
-#    listuids=[x.split('.mhd')[0] for x in listfiles]
-#    uid=listuids[n]
-#    annotations_path='/data/lungCT/luna/annotations.csv'
-#    path_label='/data/lungCT/luna/temp/luna_npy/'+uid+'_label.npy'
-#    mask_path=os.path.join('/data/lungCT/luna/seg-lungs-LUNA16',uid+'.mhd')
-#    
-#    path='/data/lungCT/luna/subset0/'+uid+'.mhd'
-#    npy_img_path=os.path.join('/data/lungCT/luna/temp/luna_npy/',uid+'_clean.npy')
-#    
-#    
 #    img,lb_origin,lb_spacing,_=load_itk_image(path)
 #    
-#    image_npy=np.load(npy_img_path)
-#    label_new=np.load(path_label)
-#    df=pd.read_csv(annotations_path)
+##    image_npy=np.load(npy_img_path)
+##    label_new=np.load(path_label)
+    df=pd.read_csv(annotations_path)
 #    label_initial=df[df.seriesuid==uid]
 #    label_initial=np.array(list(label_initial.iloc[0,1:]))
 #    mask=load_itk_image(mask_path)
 #    itkimage = sitk.ReadImage(path)
-#    
-#    import matplotlib.pyplot as plt
-##    plt.imshow(image_npy[0,:,:,160], cmap=plt.cm.gray)
-##    plt.imshow(img[:,:,255], cmap=plt.cm.gray)
-#    
-#    savenpy_luna(uid,df,'/data/lungCT/luna/seg-lungs-LUNA16',datadir,'.')
+    
+    import matplotlib.pyplot as plt
+#    plt.imshow(image_npy[0,:,:,160], cmap=plt.cm.gray)
+#    plt.imshow(img[:,:,255], cmap=plt.cm.gray)
+    
+    
+    uid='1.3.6.1.4.1.14519.5.2.1.6279.6001.282512043257574309474415322775'
+    savenpy_luna(uid,df,'/data/lungCT/luna/seg-lungs-LUNA16',datadir,'.')
+    path_label='/data/lungCT/luna/temp/luna_npy/val/'+uid+'_label.npy'
+#    bl=np.load(path_label)
+    b_world_label=df[df['seriesuid']==uid]
+    b_world_label=b_world_label.iloc[:,1:]
+    b_world_label=list(b_world_label.values)[0]
+    
+    b_info=np.load(uid+'_info.npy')
+    b_label=np.load(uid+'_label.npy')
+    b_img=np.load(uid+'_clean.npy')
+    
+    b_origin,b_spacing=b_info[0],b_info[1]
+    
+    b_world_coord=b_world_label[:3][::-1]
+    kk=simple_label_transform(b_world_coord,b_info)

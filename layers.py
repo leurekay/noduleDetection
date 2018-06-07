@@ -145,30 +145,32 @@ def fpr_net():
     x = Conv3D(32, (3, 3,3), padding='same', activation='relu')(input_img)
     x = Conv3D(32, (3, 3,3), strides=(1,1,1),padding='same', activation='relu')(x)
     x=MaxPooling3D(pool_size=(2, 2, 2), strides=(2,2,2))(x)
-    x=Dropout(0.5)(x)
+
     
     
     
-#    x = Conv3D(64, (3, 3,3), padding='same', activation='relu')(x)
-#    x = Conv3D(64, (3, 3,3), strides=(1,1,1),padding='same', activation='relu')(x)
-#    x=MaxPooling3D(pool_size=(2, 2, 2), strides=(2,2,2))(x)
-#    x=Dropout(0.5)(x)
-#    
+    x = Conv3D(64, (3, 3,3), padding='same', activation='relu')(x)
+    x = Conv3D(64, (3, 3,3), strides=(1,1,1),padding='same', activation='relu')(x)
+    x=MaxPooling3D(pool_size=(2, 2, 2), strides=(2,2,2))(x)
+
+    
 #
-#    x = Conv3D(128, (3, 3,3), padding='same', activation='relu')(x)
-#    x = Conv3D(128, (3, 3,3), strides=(1,1,1),padding='same', activation='relu')(x)
-#    x=MaxPooling3D(pool_size=(2, 2, 2), strides=(2,2,2))(x)
-#    x=Dropout(0.5)(x)
+    x = Conv3D(128, (3, 3,3), padding='same', activation='relu')(x)
+    x = Conv3D(128, (3, 3,3), strides=(1,1,1),padding='same', activation='relu')(x)
+    x=MaxPooling3D(pool_size=(2, 2, 2), strides=(2,2,2))(x)
+
     
     x=Flatten()(x)
     
-#    x=Dense(1024)(x)
+#    x=Dense(1024, )(x)
+##    x=LeakyReLU(alpha=0.3)(x)
 #    x=Dropout(0.5)(x)
     
-    x=Dense(512)(x)
+    x=Dense(512, )(x)
+#    x=LeakyReLU(alpha=0.3)(x)
     x=Dropout(0.5)(x)
     
-    x=Dense(2,activation='softmax')(x)
+    x=Dense(1,activation='sigmoid')(x)
    
     model=Model(inputs=input_img,outputs=x )
     return model
@@ -376,7 +378,7 @@ def myloss(y_true, y_pred):
     y_pos_pred=tf.boolean_mask(y_pred,mask_pos)
     y_neg_pred=tf.boolean_mask(y_pred,mask_neg)
     
-    y_neg_pred,y_neg_true=hard_mining(y_neg_pred,y_neg_true,2)
+    y_neg_pred,y_neg_true=hard_mining(y_neg_pred,y_neg_true,3)
     y_neg_true=y_neg_true+1.
     
     y_true=tf.concat([y_pos_true,y_neg_true],axis=0)
@@ -415,7 +417,7 @@ def loss_cls(y_true, y_pred):
     y_pos_pred=tf.boolean_mask(y_pred,mask_pos)
     y_neg_pred=tf.boolean_mask(y_pred,mask_neg)
     
-    y_neg_pred,y_neg_true=hard_mining(y_neg_pred,y_neg_true,2)
+    y_neg_pred,y_neg_true=hard_mining(y_neg_pred,y_neg_true,3)
     y_neg_true=y_neg_true+1.
     
     y_true=tf.concat([y_pos_true,y_neg_true],axis=0)

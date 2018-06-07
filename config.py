@@ -19,9 +19,9 @@ config['th_pos_val'] = 1
 config['num_hard'] = 2
 config['bound_size'] = 12
 config['reso'] = 1
-config['sizelim'] = 3. #mm
+config['sizelim'] = 4. #mm
 config['sizelim2'] = 15
-config['sizelim3'] = 22
+config['sizelim3'] = 28
 config['aug_scale'] = False
 config['r_rand_crop'] = 0.3
 config['pad_value'] = 170
@@ -32,9 +32,10 @@ config['train_over_total']=0.8
 
 config['data_prep_dir']='/data/lungCT/luna/temp/luna_npy'
 config['valsplit_dir']='splitdata'
-config['train_val_test_ratio']=[0.8,0.15,0.05]
+config['train_val_test_ratio']=[0.8,0.19,0.01]
 config['data_split_shuffle']=True
 config['model_dir']='/data/lungCT/luna/temp/savemodel/model4/'
+config['model_dir_fpr']='/data/lungCT/luna/temp/savemodel_fpr/model2/'
 
 config['ctinfo_path']='preprocessing/ct_info.csv'
 config['pred_save_dir']='/data/lungCT/luna/temp/submit'
