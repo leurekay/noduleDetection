@@ -185,10 +185,10 @@ if __name__=='__main__':
      ooxx=data.get_item(True)
      
      
-     for i in range(1000000):
-         p=data.get_item(np.random.choice([True,False]))
-         if i%100==0:
-             print (i)
+#     for i in range(1000000):
+#         p=data.get_item(np.random.choice([True,False]))
+#         if i%100==0:
+#             print (i)
     
 # =============================================================================
 #     data_dir='/data/lungCT/luna/temp/luna_npy'
