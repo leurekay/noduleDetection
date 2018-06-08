@@ -102,30 +102,51 @@ class FPR():
         
 #        df_candidates.loc[((df_candidates['coordX']<0) | (df_candidates['coordY']<0) | (df_candidates['coordZ']<0)),['class']]=np.nan
         df_candidates.dropna(inplace=True)
-            
+        
+        
+        
+        
         self.df_candidates=df_candidates
         
-        self.pos=df_candidates[df_candidates['class']==1]
-        self.neg=df_candidates[df_candidates['class']==0]
+        df_pos=df_candidates[df_candidates['class']==1]
+        df_neg=df_candidates[df_candidates['class']==0]
         
-        self.n_pos=self.pos.shape[0]
-        self.n_neg=self.neg.shape[0]
-    def get_item(self,isPos):
+        p_indexs=self.p_indexs=df_pos.index.values
+        n_indexs=self.n_indexs=df_neg.index.values
+        
+        ratio=int(len(n_indexs) / len(p_indexs) )
+        
+        
+        if phase=='train':
+       
+            indexs=[p_indexs for i in range(ratio)]
+            indexs.append(n_indexs)
+            indexs=np.concatenate(indexs)
+            np.random.shuffle(indexs)
+            self.indexs=indexs[:100000]
+            
+        else:
+            indexs=df_candidates.index.values
+            self.indexs=indexs
+        
+        self.len=len(indexs)
+        
+        
+            
+        
+    def get_item(self,index):
         cube_size=np.array([32,32,32],'int')
         
-        if isPos:
-            index=np.random.randint(0,self.n_pos)
-            entry=self.pos.iloc[index]
-        else:
-            index=np.random.randint(0,self.n_neg)
-            entry=self.neg.iloc[index]
+            
+        entry=self.df_candidates.loc[index]
         entry=list(entry.values)
+        
         
         path=os.path.join(self.data_dir,entry[0]+'_clean.npy')
         img=np.load(path)
         img_shape=img.shape
         
-        
+        class_label=entry[4]
         xyz=entry[1:4]
         xyz=list(reversed(xyz))
         xyz=np.array(xyz,'int')
@@ -152,7 +173,7 @@ class FPR():
         if cube.shape != (1,32,32,32):
             raise Exception(img_shape,start,end,entry)
         
-        return cube
+        return cube,class_label
             
         
 #        self.filenames = [os.path.join(data_dir, '%s_clean.npy' % idx) for idx in idcs]
@@ -182,7 +203,7 @@ if __name__=='__main__':
 
      df=data.df_candidates
      a=df[((df['coordX']<0) | (df['coordY']<0) | (df['coordZ']<0))]    
-     ooxx=data.get_item(True)
+#     ooxx=data.get_item(13)
      
      
 #     for i in range(1000000):

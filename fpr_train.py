@@ -43,7 +43,7 @@ config=config.config
 
 
 
-
+BATCH_SIZE=64
 
 EPOCHS=100
 InitialEpoch=0
@@ -91,7 +91,7 @@ else:
 
 
 #compile
-model.compile(optimizer='sgd',
+model.compile(optimizer='adam',
               loss='binary_crossentropy',
               metrics=['acc'])
 
@@ -130,25 +130,33 @@ callback_list = [checkpoint]
 
 #read data and processing by CPU ,during training.
 #Don't load all data into memory at onece!
-def generate_arrays(phase,shuffle=True):
+def generate_arrays(phase,batch_size,shuffle=True):
     dataset=data2.FPR(data_dir,candidate_path,config,phase)
-    n_samples=dataset.n_pos
-
+    indexs=dataset.indexs
+        
     while True:
-        for i in range(n_samples):
-            box=[]
-            x = dataset.get_item(isPos=True)
-            x=np.expand_dims(x,axis=-1)
-            box.append(x)
-    
-            x1 = dataset.get_item(isPos=False)
-            x1=np.expand_dims(x1,axis=-1)
-            box.append(x1)
-    
-            box=np.concatenate(box,axis=0)
-            y=np.array([1,0])
-#            y = np_utils.to_categorical(y, num_classes=2)
-            yield (box,y)
+        np.random.shuffle(indexs)
+        batches=[]
+        for i in range(len(indexs)):
+            s=i
+            e=s+batch_size
+            i=e
+            if e<len(indexs):
+                batches.append(indexs[s:e])
+            elif s<(len(indexs)):
+                batches.append(indexs[s:])
+        for batch in batches:
+            x_batch=[]
+            y_batch=[]
+            for index in batch:
+                x,y=dataset.get_item(index)
+                x=np.expand_dims(x,axis=-1)
+                x_batch.append(x)
+                y_batch.append(y)
+                
+            x_batch=np.concatenate(x_batch) 
+            y_batch=np.array(y_batch)
+            yield (x_batch,y_batch)
 
 
 
@@ -182,15 +190,17 @@ def generate_arrays2(phase,shuffle=True):
             yield (box,y)
 
 
+n_train=data2.FPR(data_dir,candidate_path,config,'train').len
+n_val=data2.FPR(data_dir,candidate_path,config,'val').len
 
 
 #training
-model.fit_generator(generate_arrays(phase='train'),
+model.fit_generator(generate_arrays('train',n_train/BATCH_SIZE),
                      steps_per_epoch=2000,
                      epochs=100,
                      verbose=1,
                      callbacks=callback_list,
-                     validation_data=generate_arrays('val'),
+                     validation_data=generate_arrays('val',n_val/BATCH_SIZE),
                      validation_steps=100,
                      workers=1,)
 
