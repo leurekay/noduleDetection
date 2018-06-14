@@ -27,7 +27,7 @@ CADProbability_label = 'probability'
 
 # plot settings
 FROC_minX = 0.125 # Mininum value of x-axis of FROC curve
-FROC_maxX = 8 # Maximum value of x-axis of FROC curve
+FROC_maxX = 80 # Maximum value of x-axis of FROC curve
 bLogPlot = True
 
 def generateBootstrapSet(scanToCandidatesDict, FROCImList):
@@ -512,7 +512,7 @@ if __name__ == '__main__':
     
     #command line parameter setting
     parser = argparse.ArgumentParser()
-    parser.add_argument('--submit', default='/data/lungCT/luna/temp/submit/model6-epoch46-train.csv', type=str, 
+    parser.add_argument('--submit', default='/data/lungCT/luna/temp/submit/model6-epoch46-val.csv', type=str, 
                         help='submit result csv file')    
     
    

@@ -113,7 +113,7 @@ recall=layers.recall
 myloss=layers.myloss
 
 #compile
-model.compile(optimizer='adam',
+model.compile(optimizer=config['optimizer'],
               loss=myloss,
               metrics=[loss_cls,recall])
 
@@ -133,7 +133,7 @@ checkpoint=ModelCheckpoint(filepath=os.path.join(model_dir,'epoch:{epoch:03d}-tr
 
 #controled learning rate for callback  
 def lr_decay(epoch):
-    lr=0.001
+    lr=0.01
     if epoch>2:
         lr=0.001
     if epoch>5:

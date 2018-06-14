@@ -26,9 +26,8 @@ from keras.regularizers import l2
 from keras import backend as K
 
 
-ROW_AXIS=1
-COL_AXIS=2
-CHANNEL_AXIS=-1
+
+
 
 ROW_AXIS=1
 COL_AXIS=2
@@ -130,6 +129,49 @@ def basic_block2(filters, init_strides=(1, 1,1), is_first_block_of_first_layer=F
         return _shortcut(input, residual)
 
     return f
+
+
+
+class PostRes():
+    def __init__(self, x, n_out, stride = 1):
+        self.input=x
+        input_shape = K.int_shape(x)
+        n_in=input_shape[-1]
+        self.conv1 = Conv3D(filters=n_out, kernel_size = 3, strides = stride, padding = 'same')
+        self.bn1 = BatchNormalization()
+        self.relu = Activation('relu')
+        self.conv2 = Conv3D(filters=n_out, kernel_size = 3, strides = stride, padding = 'same')
+        self.bn2 = BatchNormalization()
+        
+        def f(x):
+            conv=Conv3D(n_out, kernel_size = 1, strides = stride)(x)
+            return BatchNormalization()(conv)
+            
+        
+        if stride != 1 or n_out != n_in:
+            self.shortcut = f
+        else:
+            self.shortcut = None
+    
+    
+    def forward(self):
+        x=self.input
+#        input_shape = K.int_shape(x)
+#        print (input_shape)
+        residual = x
+        if self.shortcut is not None:
+            residual = self.shortcut(x)
+
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+        out = self.conv2(out)
+        out = self.bn2(out)
+        
+        out = add([out, residual])
+        out = Activation('relu')(out)
+        return out
+
 
 def f():
     def g(x):

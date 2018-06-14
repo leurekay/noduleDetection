@@ -269,11 +269,28 @@ def savenpy_luna(id,annos,luna_segment,luna_data,savepath):
             flipinfo=np.array([[1,1,1]])
         else:
             flipinfo=np.array([[0,0,0]])
-        origin_entendbox=np.concatenate([origin.reshape([1,-1]),spacing.reshape([1,-1]),np.array([Mask.shape]),extendbox.T,flipinfo])
+        origin_entendbox=np.concatenate([origin.reshape([1,-1]),spacing.reshape([1,-1]),np.array([Mask.shape]),np.array([sliceim2.shape]),extendbox.T,flipinfo])
         np.save(os.path.join(savepath,name+'_info.npy'),origin_entendbox)
     print(name)
-#    print Mask.shape
-#    print origin_entendbox
+# ----------------------the content saved in *_info.npy------------------------
+# =============================================================================
+#                       origin
+# =============================================================================
+#                       spacing
+# =============================================================================
+#                       mask_shape
+# =============================================================================
+#                       clean_image_shape
+# =============================================================================
+#                       extend[0]
+#                       extend[1]
+# =============================================================================
+#                       flip
+# =============================================================================
+
+
+
+
 
 
 
@@ -421,8 +438,16 @@ def batch_process_luna(luna_data_dir,savepath,luna_segment_dir,annotations_path)
     
    
 def simple_label_transform(zyx,info):
-    origin,spacing,mask_shape,_,_,flipinfo=info
-    extendbox=info[3:5].T
+    """
+    zyx: world coordinate sorted by z,y,z order
+    info: saved by *_info.npy
+    
+    return : pixel coorinate ,compare with *_clean.npy image's origin relatively
+             z,y,z order
+             if zyx is annotation,then return == *_label.npy
+    """
+    origin,spacing,mask_shape,_,_,_,flipinfo=info
+    extendbox=info[4:6].T
     if flipinfo[0]:
         isflip=True
     else:
@@ -450,22 +475,22 @@ def simple_label_transform(zyx,info):
     
 if __name__=='__main__':
     
-##    subsets=[0,1,2,3,4,5,6,7,8,9]
+    subsets=[0,1,2,3,4,5,6,7,8,9]
 #    subsets=[0]
-#    subsets=map(lambda x : 'subset'+str(x),subsets)
-#    
-#    for subset in subsets:
-#        
-#        luna_segment_dir = '/data/lungCT/luna/seg-lungs-LUNA16'
-#        savepath = '/data/lungCT/luna/temp/luna_npy/'+subset
-#        luna_data_dir = '/data/lungCT/luna/'+subset
-#        annotations_path='/data/lungCT/luna/annotations.csv'
-#        
-#        #generate *_clean.npy and *_label.npy
-#        batch_process_luna(luna_data_dir,savepath,luna_segment_dir,annotations_path)
-#
-#    
-#    
+    subsets=map(lambda x : 'subset'+str(x),subsets)
+    
+    for subset in subsets:
+        
+        luna_segment_dir = '/data/lungCT/luna/seg-lungs-LUNA16'
+        savepath = '/data/lungCT/luna/temp/luna_npy/'+subset
+        luna_data_dir = '/data/lungCT/luna/'+subset
+        annotations_path='/data/lungCT/luna/annotations.csv'
+        
+        #generate *_clean.npy and *_label.npy
+        batch_process_luna(luna_data_dir,savepath,luna_segment_dir,annotations_path)
+
+    
+    
 #    path='/data/lungCT/luna/subset8/1.3.6.1.4.1.14519.5.2.1.6279.6001.225515255547637437801620523312.mhd'
 #    
 #    ooxx=load_itk_image(path)
@@ -477,7 +502,7 @@ if __name__=='__main__':
     
     
     
-    
+    """    
     
 
     n=31
@@ -512,7 +537,7 @@ if __name__=='__main__':
     uid='1.3.6.1.4.1.14519.5.2.1.6279.6001.282512043257574309474415322775'
     savenpy_luna(uid,df,'/data/lungCT/luna/seg-lungs-LUNA16',datadir,'.')
     path_label='/data/lungCT/luna/temp/luna_npy/val/'+uid+'_label.npy'
-#    bl=np.load(path_label)
+    bl=np.load(path_label)
     b_world_label=df[df['seriesuid']==uid]
     b_world_label=b_world_label.iloc[:,1:]
     b_world_label=list(b_world_label.values)[0]
@@ -525,3 +550,5 @@ if __name__=='__main__':
     
     b_world_coord=b_world_label[:3][::-1]
     kk=simple_label_transform(b_world_coord,b_info)
+    
+    """

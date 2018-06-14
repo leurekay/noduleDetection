@@ -29,7 +29,7 @@ config=config.config
 
 stage1_submit_path='/data/lungCT/luna/temp/submit/model6-epoch46-val.csv'
 
-model_path='/data/lungCT/luna/temp/savemodel_fpr/model2/epoch:009-trainloss:(0.057-0.057)-valloss:(0.077-0.077).h5'
+model_path='/data/lungCT/luna/temp/savemodel_fpr/model4/epoch:002-trainloss:0.076-valloss:0.454.h5'
 
 data_dir=config['data_prep_dir']
 

@@ -19,6 +19,8 @@ from keras.layers import Dense, Dropout, Flatten,Input,Activation,Reshape
 from keras.layers import Conv2D, MaxPooling2D,MaxPooling3D,Conv3D,Deconv2D,Deconv3D
 from keras.layers.advanced_activations import LeakyReLU
 from keras.layers.merge import concatenate
+from keras.layers.normalization import BatchNormalization
+
 from keras.optimizers import SGD
 
 from keras.utils import np_utils  
@@ -30,6 +32,8 @@ import tensorflow as tf
 import keras
 import keras.backend as K
 
+import config
+config=config.config
 
 
 
@@ -42,10 +46,11 @@ def res_block(x,conv_filters,pool_size,pool_strides):
     return x
 
 
-
-
-
-def n_net():
+def n_net_2():
+    """
+    2nd version ,add coord
+    """
+    
     input_img = Input(shape=(128,128,128,1))
     coord=Input(shape=(32,32,32,3))
     
@@ -75,17 +80,88 @@ def n_net():
     x=concatenate([coord,r2,x])
     x=res_block(x,128,(1,1,1),(1,1,1))
     x= Conv3D(64, (3, 3,3), strides=(1,1,1),padding='same', )(x)
-    x=LeakyReLU(alpha=0.1)(x)
+    x=LeakyReLU(alpha=0.4)(x)
     x=Dropout(0.5)(x)
     x= Conv3D(15, (3, 3,3), strides=(1,1,1),padding='same', )(x)
-    x=LeakyReLU(alpha=0.1)(x)
+    x=LeakyReLU(alpha=0.4)(x)
     x= Reshape((32,32,32,3,5))(x)
     
     #predictions = Dense(10, activation='softmax')(x)
     model=Model(inputs=[input_img,coord],outputs=x )
     return model
 
+
+
+
+def res_block_rewrite(x,conv_filters):
+    x=resnet3D.PostRes(x,conv_filters).forward()
+    x=resnet3D.PostRes(x,conv_filters).forward()
+    x=resnet3D.PostRes(x,conv_filters).forward()
+    return x
+
+def n_net():
+    """
+    3rd version. rewrite the net in imitation of the source code 
+    """
+    input_img = Input(shape=(128,128,128,1))
+    coord=Input(shape=(32,32,32,3))
+    
+    #first 2 conv layers
+    x = Conv3D(24, (3, 3,3), strides=(1,1,1),padding='same')(input_img)
+    x =BatchNormalization()(x)
+    x= Activation('relu')(x)
+    x = Conv3D(24, (3, 3,3), strides=(1,1,1),padding='same')(x)
+    x =BatchNormalization()(x)
+    x= Activation('relu')(x)
+    
+    
+    x=MaxPooling3D(pool_size=(2,2,2),strides=(2,2,2))(x)    
+    x=res_block_rewrite(x,conv_filters=32)
+    
+    #next 3 residual block
+    r2=MaxPooling3D(pool_size=(2,2,2),strides=(2,2,2))(x)  
+    r2=res_block_rewrite(r2,conv_filters=64)
+    
+    r3=MaxPooling3D(pool_size=(2,2,2),strides=(2,2,2))(r2)  
+    r3=res_block_rewrite(r3,conv_filters=64)
+    
+    r4=MaxPooling3D(pool_size=(2,2,2),strides=(2,2,2))(r3)  
+    r4=res_block_rewrite(r4,conv_filters=64)
+    
+    
+#    feedback path
+    x=Deconv3D(64,kernel_size=(2,2,2),strides=2)(r4)
+    x =BatchNormalization()(x)
+    x= Activation('relu')(x)
+    
+    x=concatenate([r3,x])
+    x=res_block_rewrite(x,64)
+    
+    x=Deconv3D(64,kernel_size=(2,2,2),strides=2)(x)
+    x =BatchNormalization()(x)
+    x= Activation('relu')(x)
+    
+    x=concatenate([coord,r2,x])
+    x=res_block_rewrite(x,128)
+    
+    #2 convolution
+    x=Dropout(0.5)(x)
+    x = Conv3D(64, (1, 1,1), strides=(1,1,1),padding='same')(x)
+#    x= Activation('relu')(x)  
+    x=LeakyReLU(alpha=0.3)(x)
+    x = Conv3D(15, (1, 1,1), strides=(1,1,1),padding='same')(x)
+    
+    x= Reshape((32,32,32,3,5))(x)
+    
+    model=Model(inputs=[input_img,coord],outputs=x )
+    return model
+    
+
+
 def n_net_without_coord():#origin version, no coord, only one input
+    """
+    1st version. 
+    """
     input_img = Input(shape=(128,128,128,1))
     
     #first 2 conv layers
@@ -176,6 +252,57 @@ def fpr_net():
     return model
 
 
+
+def fpr_3d_dcnn():
+    input_img = Input(shape=(32,32,32,1))
+    
+    
+    x =BatchNormalization()(input_img)
+    
+    
+ 
+    x = Conv3D(32, (3, 3,3), padding='same', activation='relu')(x)
+    x =BatchNormalization()(x)
+    x = Conv3D(32, (3, 3,3), padding='same', activation='relu')(x)
+    x =BatchNormalization()(x)
+    x=MaxPooling3D(pool_size=(2,2,2),strides=(2,2,2))(x)
+
+    x=Dropout(0.5)(x)
+    
+    x = Conv3D(64, (3, 3,3), padding='same', activation='relu')(x)
+    x =BatchNormalization()(x)
+    x = Conv3D(64, (3, 3,3), padding='same', activation='relu')(x)
+    x =BatchNormalization()(x)
+    x=MaxPooling3D(pool_size=(2,2,2),strides=(2,2,2))(x)   
+    
+    x=Dropout(0.5)(x)
+    
+    x = Conv3D(128, (3, 3,3), padding='same', activation='relu')(x)
+    x =BatchNormalization()(x)
+    x = Conv3D(128, (3, 3,3), padding='same', activation='relu')(x)
+    x =BatchNormalization()(x)
+    x=MaxPooling3D(pool_size=(2,2,2),strides=(2,2,2))(x)   
+    
+    x=Dropout(0.5)(x)
+    
+    
+
+
+    
+#    x=Flatten()(x)
+#    
+#    x=Dense(1024, )(x)
+##    x=LeakyReLU(alpha=0.3)(x)
+#    x=Dropout(0.5)(x)
+#    
+#    x=Dense(512, )(x)
+##    x=LeakyReLU(alpha=0.3)(x)
+#    x=Dropout(0.5)(x)
+#    
+#    x=Dense(1,activation='sigmoid')(x)
+   
+    model=Model(inputs=input_img,outputs=x )
+    return model
 
 
 
@@ -378,7 +505,7 @@ def myloss(y_true, y_pred):
     y_pos_pred=tf.boolean_mask(y_pred,mask_pos)
     y_neg_pred=tf.boolean_mask(y_pred,mask_neg)
     
-    y_neg_pred,y_neg_true=hard_mining(y_neg_pred,y_neg_true,3)
+    y_neg_pred,y_neg_true=hard_mining(y_neg_pred,y_neg_true,config['num_hard'])
     y_neg_true=y_neg_true+1.
     
     y_true=tf.concat([y_pos_true,y_neg_true],axis=0)
@@ -417,7 +544,7 @@ def loss_cls(y_true, y_pred):
     y_pos_pred=tf.boolean_mask(y_pred,mask_pos)
     y_neg_pred=tf.boolean_mask(y_pred,mask_neg)
     
-    y_neg_pred,y_neg_true=hard_mining(y_neg_pred,y_neg_true,3)
+    y_neg_pred,y_neg_true=hard_mining(y_neg_pred,y_neg_true,config['num_hard'])
     y_neg_true=y_neg_true+1.
     
     y_true=tf.concat([y_pos_true,y_neg_true],axis=0)
@@ -450,11 +577,11 @@ def recall(y_true, y_pred):
 
     
 if __name__=='__main__':
-    model=fpr_net()
+    model=fpr_3d_dcnn()
 
     model.summary()
     
-    plot_model(model, to_file='images/fpr_model.png',show_shapes=True)
+    plot_model(model, to_file='images/fpr_rewrite.png',show_shapes=True)
     
     
     
@@ -485,7 +612,7 @@ if __name__=='__main__':
 #     tabel_before_transform=label.reshape([-1,5])
 #     
 #     index=np.argsort(-table[:,0])
-#     tabel_before_transform=tabel_before_transform[index]
+#     tabel_before_transform=tabel_b efore_transform[index]
 #     table=table[index]
 #     
 # #    boxes=nms(table,0.5)

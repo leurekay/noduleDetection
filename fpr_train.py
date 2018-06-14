@@ -23,8 +23,11 @@ import tensorflow as tf
 import keras
 import keras.backend as K
 from keras.models import Model,load_model
-from keras.callbacks import LearningRateScheduler, ModelCheckpoint
+from keras.callbacks import LearningRateScheduler, ModelCheckpoint,Callback
 from keras.utils import np_utils
+
+from sklearn.metrics import roc_auc_score
+
 
 import numpy as np
 import pandas as pd
@@ -97,7 +100,7 @@ model.compile(optimizer='adam',
 
 
 #checkpoint for callback
-checkpoint=ModelCheckpoint(filepath=os.path.join(model_dir,'epoch:{epoch:03d}-trainloss:({loss:.3f}-{loss:.3f})-valloss:({val_loss:.3f}-{val_loss:.3f}).h5'), 
+checkpoint=ModelCheckpoint(filepath=os.path.join(model_dir,'epoch:{epoch:03d}-trainloss:{loss:.3f}-valloss:{val_loss:.3f}.h5'), 
                                 monitor='val_loss', 
                                 verbose=0, 
                                 save_best_only=False, 
@@ -118,9 +121,41 @@ def lr_decay(epoch):
 lr_scheduler = LearningRateScheduler(lr_decay)
 
 
-#callback list
-callback_list = [checkpoint]
 
+#AUC callback
+class RocAucEvaluation(Callback):
+    def __init__(self,  interval=1):
+        super(Callback, self).__init__()
+        self.interval = interval
+        self.val=[]
+    def gen(self,phase,batch_size,shuffle) :
+        
+        for (x_batch,y_batch) in generate_arrays(phase,batch_size,shuffle):
+            self.val.append(y_batch)
+            yield x_batch
+            
+            
+        
+    def on_epoch_end(self, epoch, log={}):
+        
+        
+        
+        if epoch % self.interval == 0:
+            y_pred = self.model.predict_generator(self.gen('val',BATCH_SIZE,shuffle=False),steps=n_val/BATCH_SIZE,verbose=1)
+            _=self.val.pop()
+            y_val=np.concatenate(self.val) 
+            
+            score = roc_auc_score(y_val, y_pred)
+            self.val=[]
+            print('\n ROC_AUC - epoch:%d - score:%.6f \n' % (epoch+1, score))
+
+RocAuc = RocAucEvaluation( interval=1)
+
+
+
+#callback list
+callback_list = [checkpoint,RocAuc]
+#callback_list = [RocAuc]
 
 
 
@@ -162,32 +197,35 @@ def generate_arrays(phase,batch_size,shuffle=True):
 
 
 
-#read data and processing by CPU ,during training.
-#Don't load all data into memory at onece!
-def generate_arrays2(phase,shuffle=True):
+def generate_arrays2(phase,batch_size,shuffle=True):
     dataset=data2.FPR(data_dir,candidate_path,config,phase)
-    n_samples=dataset.n_pos
-
+    indexs=dataset.indexs
+        
     while True:
-        for i in range(n_samples):
-            box=[]
-            y=[]
-            for _ in range(4):
-                coin=np.random.randint(0,2)
-                if coin==1:
-                    x = dataset.get_item(isPos=True)
-                else:
-                    x = dataset.get_item(isPos=False)
+        np.random.shuffle(indexs)
+        batches=[]
+        for i in range(len(indexs)):
+            s=i
+            e=s+batch_size
+            i=e
+            if e<len(indexs):
+                batches.append(indexs[s:e])
+            elif s<(len(indexs)):
+                batches.append(indexs[s:])
+        for batch in batches:
+            x_batch=[]
+            y_batch=[]
+            for index in batch:
+                x,y=dataset.get_item(index)
                 x=np.expand_dims(x,axis=-1)
+                x_batch.append(x)
+                y_batch.append(y)
+                
+            x_batch=np.concatenate(x_batch) 
+            y_batch=np.array(y_batch)
+            yield x_batch
 
-                box.append(x)
-                y.append(coin)
-           
-            box=np.concatenate(box,axis=0)
-            y=np.array(y)
-            
-#            y = np_utils.to_categorical(y, num_classes=2)
-            yield (box,y)
+
 
 
 n_train=data2.FPR(data_dir,candidate_path,config,'train').len
@@ -195,13 +233,14 @@ n_val=data2.FPR(data_dir,candidate_path,config,'val').len
 
 
 #training
-model.fit_generator(generate_arrays('train',n_train/BATCH_SIZE),
-                     steps_per_epoch=2000,
+model.fit_generator(generate_arrays('train',BATCH_SIZE),
+                     steps_per_epoch=n_train/BATCH_SIZE,
                      epochs=100,
+                     initial_epoch=InitialEpoch,
                      verbose=1,
                      callbacks=callback_list,
-                     validation_data=generate_arrays('val',n_val/BATCH_SIZE),
-                     validation_steps=100,
+                     validation_data=generate_arrays('val',BATCH_SIZE),
+                     validation_steps=n_val/BATCH_SIZE,
                      workers=1,)
 
 

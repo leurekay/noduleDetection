@@ -77,11 +77,11 @@ class DataBowl3Detector():
             if np.all(l==0):
                 l=np.array([])
             labels.append(l)
-            origin,extend,_=np.load(os.path.join(data_dir, '%s_info.npy' %idx))
+            origin,_,_,_,extend,_,_=np.load(os.path.join(data_dir, '%s_info.npy' %idx))
             origins.append(origin)
             extendboxes.append(extend)
 
-        self.sample_bboxes = labels
+        self.sample_bboxes = labels   #contain every patient's annotation,even it doesn't have any anotation
         self.sample_origins=origins
         self.sample_extendboxes=extendboxes
         if self.phase != 'test':
@@ -95,7 +95,7 @@ class DataBowl3Detector():
                             self.bboxes+=[[np.concatenate([[i],t])]]*2
                         if t[3]>sizelim3:
                             self.bboxes+=[[np.concatenate([[i],t])]]*4
-            self.bboxes = np.concatenate(self.bboxes,axis = 0)
+            self.bboxes = np.concatenate(self.bboxes,axis = 0) #numpy array,contain all the annotations repeatly
 
         self.crop = Crop(config)
         self.label_mapping = LabelMapping(config, self.phase)
@@ -103,6 +103,18 @@ class DataBowl3Detector():
         self.__shape__=None
 
     def __getitem__(self, idx,split=None):
+        """
+        idx :index(0,1,2,3,4,5...) select from self.bboxes
+        
+        return:
+            if phase==(train or val):
+                image (128,128,128,1)
+                label (32,32,32,3,5)
+                coord (3,32,32,32)
+            if phase == test:
+                pass
+        """
+        
         t = time.time()
         np.random.seed(int(str(t%1)[2:7]))#seed according to time
 
@@ -496,8 +508,8 @@ def collate(batch):
 
 if __name__=="__main__":
     data_dir='/data/lungCT/luna/temp/luna_npy'
-    split_dir='splitdata'
-    data=DataBowl3Detector(data_dir,config,phase='val')
+
+    data=DataBowl3Detector(data_dir,config,phase='train')
     patch,label,coord=data.__getitem__(15)
     start=coord[:,0,0,0]
     end=coord[:,31,31,31]

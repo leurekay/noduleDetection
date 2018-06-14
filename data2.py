@@ -87,7 +87,7 @@ class FPR():
             clean_img_shape=clean_img.shape[1:]
             info=np.load(os.path.join(data_dir, '%s_info.npy' %idx))
             origin=info[0]
-            extend=info[3]
+            extend=info[4]
             origin=np.flip(origin,0)
             extend=np.flip(extend,0)
             
@@ -129,13 +129,16 @@ class FPR():
             indexs=df_candidates.index.values
             self.indexs=indexs
         
-        self.len=len(indexs)
+        self.len=len(self.indexs)
         
         
             
         
     def get_item(self,index):
         cube_size=np.array([32,32,32],'int')
+        margin=10
+        
+        
         
             
         entry=self.df_candidates.loc[index]
@@ -150,7 +153,12 @@ class FPR():
         xyz=entry[1:4]
         xyz=list(reversed(xyz))
         xyz=np.array(xyz,'int')
-        start=xyz-cube_size/2
+
+        if self.phase=='train'  and  index in self.p_indexs:
+            start=xyz-np.random.randint(margin,32-margin,[3,])
+        else:
+            start=xyz-cube_size/2
+            
         start=start.astype('int')
         comp=np.vstack((start,np.array([0,0,0])))
         start=np.max(comp,axis=0)
@@ -176,30 +184,12 @@ class FPR():
         return cube,class_label
             
         
-#        self.filenames = [os.path.join(data_dir, '%s_clean.npy' % idx) for idx in idcs]
-#
-#        
-#        labels = []
-#        origins=[]
-#        extendboxes=[]
-#        
-#        for idx in idcs:
-#            l = np.load(os.path.join(data_dir, '%s_label.npy' %idx))
-#            if np.all(l==0):
-#                l=np.array([])
-#            labels.append(l)
-#            origin,extend,_=np.load(os.path.join(data_dir, '%s_info.npy' %idx))
-#            origins.append(origin)
-#            extendboxes.append(extend)
-#
-#        self.sample_bboxes = labels
-#        self.sample_origins=origins
-#        self.sample_extendboxes=extendboxes
+
 
 if __name__=='__main__':
      data_dir='/data/lungCT/luna/temp/luna_npy'
      label_path='/data/lungCT/luna/candidates.csv'   
-     data=FPR(data_dir,label_path,config,phase='train')
+     data=FPR(data_dir,label_path,config,phase='val')
 
      df=data.df_candidates
      a=df[((df['coordX']<0) | (df['coordY']<0) | (df['coordZ']<0))]    

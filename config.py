@@ -28,14 +28,15 @@ config['pad_value'] = 170
 config['augtype'] = {'flip':False,'swap':False,'scale':False,'rotate':False}
 config['blacklist'] = ['868b024d9fa388b7ddab12ec1c06af38','990fbe3f0a1b53878669967b9afd1441','adc3bbc63d40f8761c59be10f1e504c3']
 config['train_over_total']=0.8
+config['optimizer']='sgd'
 
 
 config['data_prep_dir']='/data/lungCT/luna/temp/luna_npy'
 config['valsplit_dir']='splitdata'
-config['train_val_test_ratio']=[0.8,0.19,0.01]
+config['train_val_test_ratio']=[0.8,0.18,0.02]
 config['data_split_shuffle']=True
 config['model_dir']='/data/lungCT/luna/temp/savemodel/model4/'
-config['model_dir_fpr']='/data/lungCT/luna/temp/savemodel_fpr/model2/'
+config['model_dir_fpr']='/data/lungCT/luna/temp/savemodel_fpr/model4/'
 
 config['ctinfo_path']='preprocessing/ct_info.csv'
 config['pred_save_dir']='/data/lungCT/luna/temp/submit'
