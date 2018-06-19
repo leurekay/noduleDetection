@@ -51,22 +51,30 @@ parser.add_argument('--model', default='model6',
                     type=str, help='model')
 parser.add_argument('--epoch', default=89,
                     type=int, help='epoch')
+parser.add_argument('--savepath', default=None,
+                    type=str, help='savepath')
+
 
 args = parser.parse_args()
 
 data_phase=args.phase
 model_n=args.model
 epoch=args.epoch
+save_path=args.savepath
 
-
-nms_th=0.6
-pos_th=0.2
+nms_th=config['nms_th']
+pos_th=config['pos_th']
 data_dir=config['data_prep_dir']
 ctinfo_path=config['ctinfo_path']
 pred_save_dir=config['pred_save_dir']
 if not os.path.exists(pred_save_dir):
     os.makedirs(pred_save_dir)
 model_dir='/data/lungCT/luna/temp/savemodel/'
+
+if not save_path:
+    save_path=os.path.join(pred_save_dir,model_n+'-epoch'+str(epoch)+'-'+data_phase+'.csv')
+
+    
 
 
 model_dir=os.path.join(model_dir,model_n)
@@ -98,6 +106,11 @@ def localVoxel_To_globalWorld(label,origin,extend):
     """
     input [z,y,x]  same as the input of neual net computing 
     return [x,y,z] same as the annotation.csv
+    
+    
+    !!!!!!!!!this function is wrong!!!!
+    because i didn't consider the flip case
+    
     """
     ret= label+origin+extend
     return ret[[2,1,0]]
@@ -163,7 +176,6 @@ for index in range(len_uids):
         pred_df.loc[count]=[uid,entry[1],entry[2],entry[3],entry[0]]
         count+=1
 
-save_path=os.path.join(pred_save_dir,model_n+'-epoch'+str(epoch)+'-'+data_phase+'.csv')
 pred_df.to_csv(save_path,index=None)  
 print ("output %d postive predictions"%pred_df.shape[0])
 print ("csv file saved in %s"%save_path)

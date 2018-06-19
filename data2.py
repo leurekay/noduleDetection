@@ -80,12 +80,15 @@ class FPR():
         
         df_candidates=pd.read_csv(candidates_path)
         df_candidates=df_candidates[df_candidates['seriesuid'].isin(idcs)]
-     
+        
+        uid_info_Dict={}
         
         for idx in idcs:
             clean_img=np.load(os.path.join(data_dir, '%s_clean.npy' %idx))
             clean_img_shape=clean_img.shape[1:]
             info=np.load(os.path.join(data_dir, '%s_info.npy' %idx))
+            uid_info_Dict[idx]=info
+            
             origin=info[0]
             extend=info[4]
             origin=np.flip(origin,0)
@@ -103,7 +106,7 @@ class FPR():
 #        df_candidates.loc[((df_candidates['coordX']<0) | (df_candidates['coordY']<0) | (df_candidates['coordZ']<0)),['class']]=np.nan
         df_candidates.dropna(inplace=True)
         
-        
+        self.uid_info_Dict=uid_info_Dict
         
         
         self.df_candidates=df_candidates

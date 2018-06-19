@@ -26,11 +26,14 @@ from keras.models import Model,load_model
 from keras.callbacks import LearningRateScheduler, ModelCheckpoint,Callback
 from keras.utils import np_utils
 
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_auc_score,classification_report,log_loss,roc_curve
 
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+plt.switch_backend('agg')
+
 import config
 import argparse
 
@@ -52,7 +55,7 @@ EPOCHS=100
 InitialEpoch=0
 data_dir=config['data_prep_dir'] #including  *_clean.npy and *_label.npy
 model_dir=config['model_dir_fpr']
-candidate_path='/data/lungCT/luna/candidates.csv'    
+candidate_path=config['candidate_path']    
 
 
 #command line parameter setting
@@ -122,6 +125,23 @@ lr_scheduler = LearningRateScheduler(lr_decay)
 
 
 
+
+def ploter(x,y,savepath):
+    fig, ax = plt.subplots(figsize=[12,9])
+    ax.plot(x,y, 'g-', label='curve',linewidth=2.5)
+    
+    plt.ylim(0,1.2)
+    plt.xlabel('FP', fontsize=25)
+    plt.ylabel('TP', fontsize=25)
+    plt.title('kkkkkkk',fontsize=30)
+    
+    
+#    legend = ax.legend(loc='upper right', shadow=True, fontsize=22)
+    
+    
+    fig.savefig(savepath)
+
+
 #AUC callback
 class RocAucEvaluation(Callback):
     def __init__(self,  interval=1):
@@ -146,9 +166,17 @@ class RocAucEvaluation(Callback):
             y_val=np.concatenate(self.val) 
             
             score = roc_auc_score(y_val, y_pred)
+            loss=log_loss(y_val, y_pred)
+            curve=roc_curve(y_val,y_pred,pos_label=1)
+            
             self.val=[]
-            print('\n ROC_AUC - epoch:%d - score:%.6f \n' % (epoch+1, score))
-
+            print('\n ROC_AUC - epoch:%d - score:%.6f - loss:%.6f \n' % (epoch+1, score,loss))
+            x=curve[0]
+            y=curve[1]
+            savepath=os.path.join(model_dir,str(epoch)+'.png')
+            ploter(x,y,savepath)
+            
+            
 RocAuc = RocAucEvaluation( interval=1)
 
 

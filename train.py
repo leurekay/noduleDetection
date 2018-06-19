@@ -135,11 +135,11 @@ checkpoint=ModelCheckpoint(filepath=os.path.join(model_dir,'epoch:{epoch:03d}-tr
 def lr_decay(epoch):
     lr=0.01
     if epoch>2:
+        lr=0.01
+    if epoch>4:
         lr=0.001
-    if epoch>5:
-        lr=0.0001
     if epoch>10:
-        lr=0.00001
+        lr=0.0001
     return lr
 lr_scheduler = LearningRateScheduler(lr_decay)
 

@@ -27,7 +27,7 @@ import layers
 
 config=config.config
 
-stage1_submit_path='/data/lungCT/luna/temp/submit/model6-epoch46-val.csv'
+stage1_submit_path='/data/lungCT/luna/temp/submit/free-model6-epoch46-val.csv'
 
 model_path='/data/lungCT/luna/temp/savemodel_fpr/model4/epoch:002-trainloss:0.076-valloss:0.454.h5'
 

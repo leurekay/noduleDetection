@@ -141,7 +141,7 @@ class PostRes():
         self.bn1 = BatchNormalization()
         self.relu = Activation('relu')
         self.conv2 = Conv3D(filters=n_out, kernel_size = 3, strides = stride, padding = 'same')
-        self.bn2 = BatchNormalization()
+        self.bn2 = BatchNormalization(gamma_initializer='zeros',moving_variance_initializer='zeros')
         
         def f(x):
             conv=Conv3D(n_out, kernel_size = 1, strides = stride)(x)

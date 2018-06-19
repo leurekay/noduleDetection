@@ -36,7 +36,7 @@ import config
 config=config.config
 
 
-
+leaky_alpha=config['leaky_alpha']
 
 def res_block(x,conv_filters,pool_size,pool_strides):
     for i in range(3):  
@@ -80,10 +80,10 @@ def n_net_2():
     x=concatenate([coord,r2,x])
     x=res_block(x,128,(1,1,1),(1,1,1))
     x= Conv3D(64, (3, 3,3), strides=(1,1,1),padding='same', )(x)
-    x=LeakyReLU(alpha=0.4)(x)
+    x=LeakyReLU(alpha=0.3)(x)
     x=Dropout(0.5)(x)
     x= Conv3D(15, (3, 3,3), strides=(1,1,1),padding='same', )(x)
-    x=LeakyReLU(alpha=0.4)(x)
+    x=LeakyReLU(alpha=0.3)(x)
     x= Reshape((32,32,32,3,5))(x)
     
     #predictions = Dense(10, activation='softmax')(x)
@@ -110,9 +110,11 @@ def n_net():
     x = Conv3D(24, (3, 3,3), strides=(1,1,1),padding='same')(input_img)
     x =BatchNormalization()(x)
     x= Activation('relu')(x)
+#    x=LeakyReLU(alpha=leaky_alpha)(x)
     x = Conv3D(24, (3, 3,3), strides=(1,1,1),padding='same')(x)
     x =BatchNormalization()(x)
     x= Activation('relu')(x)
+#    x=LeakyReLU(alpha=leaky_alpha)(x)
     
     
     x=MaxPooling3D(pool_size=(2,2,2),strides=(2,2,2))(x)    
@@ -133,6 +135,7 @@ def n_net():
     x=Deconv3D(64,kernel_size=(2,2,2),strides=2)(r4)
     x =BatchNormalization()(x)
     x= Activation('relu')(x)
+#    x=LeakyReLU(alpha=leaky_alpha)(x)
     
     x=concatenate([r3,x])
     x=res_block_rewrite(x,64)
@@ -140,6 +143,7 @@ def n_net():
     x=Deconv3D(64,kernel_size=(2,2,2),strides=2)(x)
     x =BatchNormalization()(x)
     x= Activation('relu')(x)
+#    x=LeakyReLU(alpha=leaky_alpha)(x)
     
     x=concatenate([coord,r2,x])
     x=res_block_rewrite(x,128)
@@ -148,8 +152,9 @@ def n_net():
     x=Dropout(0.5)(x)
     x = Conv3D(64, (1, 1,1), strides=(1,1,1),padding='same')(x)
 #    x= Activation('relu')(x)  
-    x=LeakyReLU(alpha=0.3)(x)
+    x=LeakyReLU(alpha=leaky_alpha)(x)
     x = Conv3D(15, (1, 1,1), strides=(1,1,1),padding='same')(x)
+#    x=LeakyReLU(alpha=leaky_alpha)(x)
     
     x= Reshape((32,32,32,3,5))(x)
     
@@ -577,11 +582,11 @@ def recall(y_true, y_pred):
 
     
 if __name__=='__main__':
-    model=fpr_3d_dcnn()
+    model=n_net()
 
     model.summary()
     
-    plot_model(model, to_file='images/fpr_rewrite.png',show_shapes=True)
+    plot_model(model, to_file='images/3dmodel.png',show_shapes=True)
     
     
     
