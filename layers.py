@@ -15,7 +15,7 @@ import pandas as pd
 
 
 from keras.models import Model
-from keras.layers import Dense, Dropout, Flatten,Input,Activation,Reshape
+from keras.layers import Dense, Dropout, Flatten,Input,Activation,Reshape,Lambda
 from keras.layers import Conv2D, MaxPooling2D,MaxPooling3D,Conv3D,Deconv2D,Deconv3D
 from keras.layers.advanced_activations import LeakyReLU
 from keras.layers.merge import concatenate
@@ -37,6 +37,14 @@ config=config.config
 
 
 leaky_alpha=config['leaky_alpha']
+
+
+
+def slice_last_dim(x):
+   
+    return x[:,:,:,11]
+ 
+    
 
 def res_block(x,conv_filters,pool_size,pool_strides):
     for i in range(3):  
@@ -78,12 +86,13 @@ def n_net_2():
     x=res_block(x,64,(1,1,1),(1,1,1))
     x=Deconv3D(64,kernel_size=(2,2,2),strides=2)(x)
     x=concatenate([coord,r2,x])
+#    x=concatenate([r2,x])
     x=res_block(x,128,(1,1,1),(1,1,1))
     x= Conv3D(64, (3, 3,3), strides=(1,1,1),padding='same', )(x)
-    x=LeakyReLU(alpha=0.3)(x)
+    x=LeakyReLU(alpha=leaky_alpha)(x)
     x=Dropout(0.5)(x)
     x= Conv3D(15, (3, 3,3), strides=(1,1,1),padding='same', )(x)
-    x=LeakyReLU(alpha=0.3)(x)
+    x=LeakyReLU(alpha=leaky_alpha)(x)
     x= Reshape((32,32,32,3,5))(x)
     
     #predictions = Dense(10, activation='softmax')(x)
@@ -145,7 +154,10 @@ def n_net():
     x= Activation('relu')(x)
 #    x=LeakyReLU(alpha=leaky_alpha)(x)
     
-    x=concatenate([coord,r2,x])
+    x=concatenate([r2,x,coord])
+#    x=Lambda(slice_last_dim)(x)
+#    print x.shape
+#    x=concatenate([r2,x])
     x=res_block_rewrite(x,128)
     
     #2 convolution
@@ -157,6 +169,7 @@ def n_net():
 #    x=LeakyReLU(alpha=leaky_alpha)(x)
     
     x= Reshape((32,32,32,3,5))(x)
+    
     
     model=Model(inputs=[input_img,coord],outputs=x )
     return model
@@ -205,7 +218,7 @@ def n_net_without_coord():#origin version, no coord, only one input
     model=Model(inputs=input_img,outputs=x )
     return model
 
-def n_net2():
+def n_net_test():
     input_img = Input(shape=(128,128,128,1,))
     #first 2 conv layers
     x = Conv3D(24, (3, 3,3), padding='same', activation='relu')(input_img)
@@ -301,7 +314,7 @@ def fpr_3d_dcnn():
 #    x=Dropout(0.5)(x)
 #    
 #    x=Dense(512, )(x)
-##    x=LeakyReLU(alpha=0.3)(x)
+##    x=LeakyReLU(alpha=0.3)(x)pos
 #    x=Dropout(0.5)(x)
 #    
 #    x=Dense(1,activation='sigmoid')(x)
@@ -516,10 +529,20 @@ def myloss(y_true, y_pred):
     y_true=tf.concat([y_pos_true,y_neg_true],axis=0)
     y_pred=tf.concat([y_pos_pred,y_neg_pred],axis=0)
     
-    y_pred_sigmoid=tf.sigmoid(y_pred[:,0])
-#    loss_cls=tf.losses.log_loss(y_true[:,0],y_pred_sigmoid)
-    loss_cls=tf.losses.sigmoid_cross_entropy(y_true[:,0],y_pred[:,0])
-
+    
+    
+    #add weights to loss respectively to pos and neg
+    N_pos=tf.reduce_sum(y_pos_true[:,0])
+    N_neg=config['num_hard']
+    loss_cls_pos=tf.losses.sigmoid_cross_entropy(y_pos_true[:,0],y_pos_pred[:,0])
+    loss_cls_neg=tf.losses.sigmoid_cross_entropy(y_neg_true[:,0],y_neg_pred[:,0])
+    loss_cls=(config['beta_pos']*loss_cls_pos*N_pos+config['beta_neg']*loss_cls_neg*N_neg)/(N_pos+N_neg)
+    
+    
+#    y_pred_sigmoid=tf.sigmoid(y_pred[:,0])
+##    loss_cls=tf.losses.log_loss(y_true[:,0],y_pred_sigmoid)
+#    loss_cls=tf.losses.sigmoid_cross_entropy(y_true[:,0],y_pred[:,0])
+    
 
     def smoothL1(x,y):
         """
@@ -555,9 +578,20 @@ def loss_cls(y_true, y_pred):
     y_true=tf.concat([y_pos_true,y_neg_true],axis=0)
     y_pred=tf.concat([y_pos_pred,y_neg_pred],axis=0)
     
-    y_pred_sigmoid=tf.sigmoid(y_pred[:,0])
-#    loss_cls=tf.losses.log_loss(y_true[:,0],y_pred_sigmoid)
-    loss_cls=tf.losses.sigmoid_cross_entropy(y_true[:,0],y_pred[:,0])
+    
+    
+    #add weights to loss respectively to pos and neg
+    N_pos=tf.reduce_sum(y_pos_true[:,0])
+    N_neg=config['num_hard']
+    loss_cls_pos=tf.losses.sigmoid_cross_entropy(y_pos_true[:,0],y_pos_pred[:,0])
+    loss_cls_neg=tf.losses.sigmoid_cross_entropy(y_neg_true[:,0],y_neg_pred[:,0])
+    loss_cls=(config['beta_pos']*loss_cls_pos*N_pos+config['beta_neg']*loss_cls_neg*N_neg)/(N_pos+N_neg)
+    
+    
+    
+#    y_pred_sigmoid=tf.sigmoid(y_pred[:,0])
+##    loss_cls=tf.losses.log_loss(y_true[:,0],y_pred_sigmoid)
+#    loss_cls=tf.losses.sigmoid_cross_entropy(y_true[:,0],y_pred[:,0])
     return loss_cls
     
 
@@ -582,32 +616,31 @@ def recall(y_true, y_pred):
 
     
 if __name__=='__main__':
-    model=n_net()
+#    model=n_net()
+#
+#    model.summary()
+#    
+#    plot_model(model, to_file='images/3dmodel.png',show_shapes=True)
+    
+    
+    
+    import data 
+    
+    data_dir='/data/lungCT/luna/temp/luna_npy'
+    dataset=data.DataBowl3Detector(data_dir,data.config)
+    patch,label,coord=dataset.__getitem__(112)
+     
+    y_true=tf.constant(label)
 
-    model.summary()
-    
-    plot_model(model, to_file='images/3dmodel.png',show_shapes=True)
-    
-    
-    
-# =============================================================================
-#     import data 
-#     
-#     data_dir='/data/lungCT/luna/temp/luna_npy'
-#     dataset=data.DataBowl3Detector(data_dir,data.config)
-#     patch,label,coord=dataset.__getitem__(46)
-# 
-#     y_true=tf.constant(label)
-#     
-#     a=myloss(y_true,y_true)
+    a=myloss(y_true,y_true)
 #     
 #  
 # #    hard=hard_mining(a,a,4)
 #     
-#     init=tf.global_variables_initializer()
-#     sess=tf.Session()
-#     sess.run(init)
-#     aa=sess.run(a)
+    init=tf.global_variables_initializer()
+    sess=tf.Session()
+    sess.run(init)
+    aa=sess.run(a)
 #     
 # #    hh=sess.run(hard)
 #     
@@ -621,6 +654,5 @@ if __name__=='__main__':
 #     table=table[index]
 #     
 # #    boxes=nms(table,0.5)
-# =============================================================================
     
     

@@ -28,8 +28,10 @@ config['pad_value'] = 170
 config['augtype'] = {'flip':False,'swap':False,'scale':False,'rotate':False}
 config['blacklist'] = ['868b024d9fa388b7ddab12ec1c06af38','990fbe3f0a1b53878669967b9afd1441','adc3bbc63d40f8761c59be10f1e504c3']
 config['train_over_total']=0.8
-config['optimizer']='adam'
+config['optimizer']='sgd'
 config['leaky_alpha']=0.3
+config['beta_pos']=0.75  #coefficient act on loss_cls_pos
+config['beta_neg']=0.25
 
 
 #when test
@@ -53,6 +55,19 @@ config['model_dir_fpr']='/data/lungCT/luna/temp/savemodel_fpr/model4/'
 config['candidate_path']='/data/lungCT/luna/candidates.csv'    
 
 
+
+
+def lr_decay(epoch):
+    lr=0.01
+    if epoch>2:
+        lr=0.01
+    if epoch>4:
+        lr=0.001
+    if epoch>10:
+        lr=0.0001
+    if epoch>30:
+        lr=0.00001
+    return lr
 
 
 

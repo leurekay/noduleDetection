@@ -132,15 +132,16 @@ checkpoint=ModelCheckpoint(filepath=os.path.join(model_dir,'epoch:{epoch:03d}-tr
                                 period=1)
 
 #controled learning rate for callback  
-def lr_decay(epoch):
-    lr=0.01
-    if epoch>2:
-        lr=0.01
-    if epoch>4:
-        lr=0.001
-    if epoch>10:
-        lr=0.0001
-    return lr
+#def lr_decay(epoch):
+#    lr=0.01
+#    if epoch>2:
+#        lr=0.01
+#    if epoch>4:
+#        lr=0.001
+#    if epoch>10:
+#        lr=0.0001
+#    return lr
+from config import lr_decay 
 lr_scheduler = LearningRateScheduler(lr_decay)
 
 
