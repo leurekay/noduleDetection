@@ -29,9 +29,9 @@ config['augtype'] = {'flip':False,'swap':False,'scale':False,'rotate':False}
 config['blacklist'] = ['868b024d9fa388b7ddab12ec1c06af38','990fbe3f0a1b53878669967b9afd1441','adc3bbc63d40f8761c59be10f1e504c3']
 config['train_over_total']=0.8
 config['optimizer']='sgd'
-config['leaky_alpha']=0.3
-config['beta_pos']=0.75  #coefficient act on loss_cls_pos
-config['beta_neg']=0.25
+config['leaky_alpha']=0.1
+config['beta_pos']=0.5  #coefficient act on loss_cls_pos
+config['beta_neg']=0.5
 
 
 #when test
@@ -58,15 +58,19 @@ config['candidate_path']='/data/lungCT/luna/candidates.csv'
 
 
 def lr_decay(epoch):
-    lr=0.01
+    lr=0.003
     if epoch>2:
-        lr=0.01
-    if epoch>4:
         lr=0.001
+    if epoch>5:
+        lr=0.0003
     if epoch>10:
         lr=0.0001
-    if epoch>30:
+    if epoch>20:
+        lr=0.00003
+    if epoch>40:
         lr=0.00001
+    if epoch>60:
+        lr=0.000003
     return lr
 
 

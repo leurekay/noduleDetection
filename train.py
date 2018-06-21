@@ -124,7 +124,7 @@ model.compile(optimizer=config['optimizer'],
 
 
 #checkpoint for callback
-checkpoint=ModelCheckpoint(filepath=os.path.join(model_dir,'epoch:{epoch:03d}-trainloss:({loss:.3f}-{loss_cls:.3f})-valloss:({val_loss:.3f}-{val_loss_cls:.3f}).h5'), 
+checkpoint=ModelCheckpoint(filepath=os.path.join(model_dir,'epoch:{epoch:03d}-trainloss:{loss:.3f}-{loss_cls:.3f}-valloss:{val_loss:.3f}-{val_loss_cls:.3f}.h5'), 
                                 monitor='val_loss', 
                                 verbose=0, 
                                 save_best_only=False, 

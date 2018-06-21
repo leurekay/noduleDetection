@@ -40,9 +40,9 @@ leaky_alpha=config['leaky_alpha']
 
 
 
-def slice_last_dim(x):
+def slice_last_dim(x,start,end):
    
-    return x[:,:,:,11]
+    return x[:,:,:,:,start:end]
  
     
 
@@ -54,7 +54,7 @@ def res_block(x,conv_filters,pool_size,pool_strides):
     return x
 
 
-def n_net_2():
+def n_net2():
     """
     2nd version ,add coord
     """
@@ -85,14 +85,21 @@ def n_net_2():
     x=concatenate([r3,x])
     x=res_block(x,64,(1,1,1),(1,1,1))
     x=Deconv3D(64,kernel_size=(2,2,2),strides=2)(x)
-    x=concatenate([coord,r2,x])
+    
+    
+    
+    #either add coord to net or not
+    x=concatenate([r2,x,coord])
+    x=Lambda(slice_last_dim,arguments={'start':0,'end':128})(x)
+    
+    
 #    x=concatenate([r2,x])
     x=res_block(x,128,(1,1,1),(1,1,1))
     x= Conv3D(64, (3, 3,3), strides=(1,1,1),padding='same', )(x)
-    x=LeakyReLU(alpha=leaky_alpha)(x)
+    x=LeakyReLU(alpha=config['leaky_alpha'])(x)
     x=Dropout(0.5)(x)
     x= Conv3D(15, (3, 3,3), strides=(1,1,1),padding='same', )(x)
-    x=LeakyReLU(alpha=leaky_alpha)(x)
+    x=LeakyReLU(alpha=config['leaky_alpha'])(x)
     x= Reshape((32,32,32,3,5))(x)
     
     #predictions = Dense(10, activation='softmax')(x)
@@ -108,7 +115,7 @@ def res_block_rewrite(x,conv_filters):
     x=resnet3D.PostRes(x,conv_filters).forward()
     return x
 
-def n_net():
+def n_net3():
     """
     3rd version. rewrite the net in imitation of the source code 
     """
@@ -119,11 +126,11 @@ def n_net():
     x = Conv3D(24, (3, 3,3), strides=(1,1,1),padding='same')(input_img)
     x =BatchNormalization()(x)
     x= Activation('relu')(x)
-#    x=LeakyReLU(alpha=leaky_alpha)(x)
+#    x=LeakyReLU(alpha=config['leaky_alpha'])(x)
     x = Conv3D(24, (3, 3,3), strides=(1,1,1),padding='same')(x)
     x =BatchNormalization()(x)
     x= Activation('relu')(x)
-#    x=LeakyReLU(alpha=leaky_alpha)(x)
+#    x=LeakyReLU(alpha=config['leaky_alpha'])(x)
     
     
     x=MaxPooling3D(pool_size=(2,2,2),strides=(2,2,2))(x)    
@@ -144,7 +151,7 @@ def n_net():
     x=Deconv3D(64,kernel_size=(2,2,2),strides=2)(r4)
     x =BatchNormalization()(x)
     x= Activation('relu')(x)
-#    x=LeakyReLU(alpha=leaky_alpha)(x)
+#    x=LeakyReLU(alpha=config['leaky_alpha'])(x)
     
     x=concatenate([r3,x])
     x=res_block_rewrite(x,64)
@@ -152,21 +159,25 @@ def n_net():
     x=Deconv3D(64,kernel_size=(2,2,2),strides=2)(x)
     x =BatchNormalization()(x)
     x= Activation('relu')(x)
-#    x=LeakyReLU(alpha=leaky_alpha)(x)
+#    x=LeakyReLU(alpha=config['leaky_alpha'])(x)
     
+    
+    #either add coord to net or not
     x=concatenate([r2,x,coord])
-#    x=Lambda(slice_last_dim)(x)
-#    print x.shape
-#    x=concatenate([r2,x])
+    x=Lambda(slice_last_dim,arguments={'start':0,'end':128})(x)
+
+    
+    
+    
     x=res_block_rewrite(x,128)
     
     #2 convolution
     x=Dropout(0.5)(x)
     x = Conv3D(64, (1, 1,1), strides=(1,1,1),padding='same')(x)
 #    x= Activation('relu')(x)  
-    x=LeakyReLU(alpha=leaky_alpha)(x)
+    x=LeakyReLU(alpha=config['leaky_alpha'])(x)
     x = Conv3D(15, (1, 1,1), strides=(1,1,1),padding='same')(x)
-#    x=LeakyReLU(alpha=leaky_alpha)(x)
+#    x=LeakyReLU(alpha=config['leaky_alpha'])(x)
     
     x= Reshape((32,32,32,3,5))(x)
     
@@ -228,6 +239,17 @@ def n_net_test():
     #predictions = Dense(10, activation='softmax')(x)
     model=Model(inputs=input_img,outputs=x )
     return model
+
+
+
+
+n_net=n_net2
+
+
+
+
+
+
 
 
 
@@ -616,31 +638,38 @@ def recall(y_true, y_pred):
 
     
 if __name__=='__main__':
-#    model=n_net()
-#
-#    model.summary()
-#    
-#    plot_model(model, to_file='images/3dmodel.png',show_shapes=True)
-    
-    
-    
-    import data 
-    
-    data_dir='/data/lungCT/luna/temp/luna_npy'
-    dataset=data.DataBowl3Detector(data_dir,data.config)
-    patch,label,coord=dataset.__getitem__(112)
-     
-    y_true=tf.constant(label)
+    model=n_net()
 
-    a=myloss(y_true,y_true)
+    model.summary()
+    
+    plot_model(model, to_file='images/3dmodel.png',show_shapes=True)
+    
+    
+#    6.20 test
+#    import data 
+#    
+#    data_dir='/data/lungCT/luna/temp/luna_npy'
+#    dataset=data.DataBowl3Detector(data_dir,data.config)
+#    patch,label,coord=dataset.__getitem__(112)
 #     
-#  
-# #    hard=hard_mining(a,a,4)
-#     
-    init=tf.global_variables_initializer()
-    sess=tf.Session()
-    sess.run(init)
-    aa=sess.run(a)
+#    y_true=tf.constant(label)
+#
+#    a=myloss(y_true,y_true)
+##     
+##  
+## #    hard=hard_mining(a,a,4)
+##     
+#    init=tf.global_variables_initializer()
+#    sess=tf.Session()
+#    sess.run(init)
+#    aa=sess.run(a)
+    
+    
+    
+    
+    
+    
+    
 #     
 # #    hh=sess.run(hard)
 #     
