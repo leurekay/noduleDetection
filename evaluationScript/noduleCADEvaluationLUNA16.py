@@ -27,7 +27,7 @@ CADProbability_label = 'probability'
 
 # plot settings
 FROC_minX = 0.125 # Mininum value of x-axis of FROC curve
-FROC_maxX = 80 # Maximum value of x-axis of FROC curve
+FROC_maxX = 8 # Maximum value of x-axis of FROC curve
 bLogPlot = True
 
 def generateBootstrapSet(scanToCandidatesDict, FROCImList):

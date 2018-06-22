@@ -72,7 +72,7 @@ if not os.path.exists(pred_save_dir):
 model_dir='/data/lungCT/luna/temp/savemodel/'
 
 if not save_path:
-    save_path=os.path.join(pred_save_dir,model_n+'-epoch'+str(epoch)+'-'+data_phase+'.csv')
+    save_path=os.path.join(pred_save_dir,model_n+'-epoch'+str(epoch)+'-'+data_phase+'-'+str(int(time.time()))+'.csv')
 
     
 

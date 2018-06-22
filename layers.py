@@ -174,8 +174,8 @@ def n_net3():
     #2 convolution
     x=Dropout(0.5)(x)
     x = Conv3D(64, (1, 1,1), strides=(1,1,1),padding='same')(x)
-#    x= Activation('relu')(x)  
-    x=LeakyReLU(alpha=config['leaky_alpha'])(x)
+    x= Activation('relu')(x)  
+#    x=LeakyReLU(alpha=config['leaky_alpha'])(x)
     x = Conv3D(15, (1, 1,1), strides=(1,1,1),padding='same')(x)
 #    x=LeakyReLU(alpha=config['leaky_alpha'])(x)
     
@@ -243,7 +243,7 @@ def n_net_test():
 
 
 
-n_net=n_net2
+n_net=n_net3
 
 
 

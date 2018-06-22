@@ -28,14 +28,14 @@ config['pad_value'] = 170
 config['augtype'] = {'flip':False,'swap':False,'scale':False,'rotate':False}
 config['blacklist'] = ['868b024d9fa388b7ddab12ec1c06af38','990fbe3f0a1b53878669967b9afd1441','adc3bbc63d40f8761c59be10f1e504c3']
 config['train_over_total']=0.8
-config['optimizer']='sgd'
-config['leaky_alpha']=0.1
+config['optimizer']='adam'
+config['leaky_alpha']=0.3
 config['beta_pos']=0.5  #coefficient act on loss_cls_pos
 config['beta_neg']=0.5
 
 
 #when test
-config['pos_th']=0.2
+config['pos_th']=0.02
 config['nms_th']=0.6
 
 
