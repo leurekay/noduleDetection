@@ -12,6 +12,8 @@ from NoduleFinding import NoduleFinding
 
 from tools import csvTools
 
+import pandas as pd
+
 # Evaluation settings
 bPerformBootstrapping = True
 bNumberOfBootstrapSamples = 1000
@@ -512,7 +514,7 @@ if __name__ == '__main__':
     
     #command line parameter setting
     parser = argparse.ArgumentParser()
-    parser.add_argument('--submit', default='/data/lungCT/luna/temp/submit/model6-epoch46-val.csv', type=str, 
+    parser.add_argument('--submit', default='/data/lungCT/luna/temp/submit/model33-epoch24-train-1529660541.csv', type=str, 
                         help='submit result csv file')    
     
    
@@ -544,3 +546,41 @@ if __name__ == '__main__':
     # execute only if run as a script
     noduleCADEvaluation(annotations_filename,annotations_excluded_filename,seriesuids_filename,results_filename,outputDir)
     print "Finished!"
+    
+    
+    
+    
+    
+    #compute froc value 
+    CADSystemName=results_filename.split('/')[-1].split('.')[0]
+    froc_list_path=os.path.join(outputDir, "froc_%s_bootstrapping.csv" % CADSystemName)
+    df=pd.read_csv(froc_list_path) 
+    fpr=df.iloc[:,0].values
+    recall=df.iloc[:,1].values
+    fpr_samples=[0.125,0.25,0.5,1,2,4,8]
+    
+    
+    box=[]
+    for point in fpr_samples:
+        delta=abs(point-fpr[0])
+        index=0
+        for i in range(len(fpr)):
+            if abs(point-fpr[i])<delta:
+                delta=abs(point-fpr[i])
+                index=i
+        box.append(recall[index])
+#        print (fpr[index],recall[index],delta)
+    
+    froc_value=sum(box)/float(len(box))
+    print ('froc value : %.4f'%froc_value)
+
+    #write froc value into CADAnalysis.txt
+    cad_analysis=os.path.join(outputDir,'CADAnalysis.txt')
+    with open(cad_analysis, 'a') as f:
+        f.write('\n    Froc value:  %f\n'%froc_value)    
+    
+    
+    
+                
+                
+            

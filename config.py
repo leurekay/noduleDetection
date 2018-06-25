@@ -30,8 +30,8 @@ config['blacklist'] = ['868b024d9fa388b7ddab12ec1c06af38','990fbe3f0a1b538786699
 config['train_over_total']=0.8
 config['optimizer']='adam'
 config['leaky_alpha']=0.3
-config['beta_pos']=0.5  #coefficient act on loss_cls_pos
-config['beta_neg']=0.5
+config['beta_pos']=0.6  #coefficient act on loss_cls_pos
+config['beta_neg']=0.6
 
 
 #when test
