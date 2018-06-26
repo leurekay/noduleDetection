@@ -225,35 +225,6 @@ def generate_arrays(phase,batch_size,shuffle=True):
 
 
 
-def generate_arrays2(phase,batch_size,shuffle=True):
-    dataset=data2.FPR(data_dir,candidate_path,config,phase)
-    indexs=dataset.indexs
-        
-    while True:
-        np.random.shuffle(indexs)
-        batches=[]
-        for i in range(len(indexs)):
-            s=i
-            e=s+batch_size
-            i=e
-            if e<len(indexs):
-                batches.append(indexs[s:e])
-            elif s<(len(indexs)):
-                batches.append(indexs[s:])
-        for batch in batches:
-            x_batch=[]
-            y_batch=[]
-            for index in batch:
-                x,y=dataset.get_item(index)
-                x=np.expand_dims(x,axis=-1)
-                x_batch.append(x)
-                y_batch.append(y)
-                
-            x_batch=np.concatenate(x_batch) 
-            y_batch=np.array(y_batch)
-            yield x_batch
-
-
 
 
 n_train=data2.FPR(data_dir,candidate_path,config,'train').len

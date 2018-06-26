@@ -615,6 +615,75 @@ def loss_cls(y_true, y_pred):
 ##    loss_cls=tf.losses.log_loss(y_true[:,0],y_pred_sigmoid)
 #    loss_cls=tf.losses.sigmoid_cross_entropy(y_true[:,0],y_pred[:,0])
     return loss_cls
+
+
+
+def loss_cls_pos(y_true, y_pred):
+    y_true=tf.reshape(y_true,[-1,5])
+    y_pred=tf.reshape(y_pred,[-1,5])
+    mask_pos=tf.greater(y_true[:,0],0.5)
+    mask_neg=tf.less(y_true[:,0],-0.5)
+    y_pos_true=tf.boolean_mask(y_true,mask_pos)
+    y_neg_true=tf.boolean_mask(y_true,mask_neg)
+    
+    y_pos_pred=tf.boolean_mask(y_pred,mask_pos)
+    y_neg_pred=tf.boolean_mask(y_pred,mask_neg)
+    
+    y_neg_pred,y_neg_true=hard_mining(y_neg_pred,y_neg_true,config['num_hard'])
+    y_neg_true=y_neg_true+1.
+    
+    y_true=tf.concat([y_pos_true,y_neg_true],axis=0)
+    y_pred=tf.concat([y_pos_pred,y_neg_pred],axis=0)
+    
+    
+    
+    #add weights to loss respectively to pos and neg
+    N_pos=tf.reduce_sum(y_pos_true[:,0])
+    N_neg=config['num_hard']
+    loss_cls_pos=tf.losses.sigmoid_cross_entropy(y_pos_true[:,0],y_pos_pred[:,0])
+    loss_cls_neg=tf.losses.sigmoid_cross_entropy(y_neg_true[:,0],y_neg_pred[:,0])
+    loss_cls=(config['beta_pos']*loss_cls_pos*N_pos+config['beta_neg']*loss_cls_neg*N_neg)/(N_pos+N_neg)
+    
+    
+    
+#    y_pred_sigmoid=tf.sigmoid(y_pred[:,0])
+##    loss_cls=tf.losses.log_loss(y_true[:,0],y_pred_sigmoid)
+#    loss_cls=tf.losses.sigmoid_cross_entropy(y_true[:,0],y_pred[:,0])
+    return (config['beta_pos']*loss_cls_pos*N_pos)/(N_pos+N_neg)
+
+def loss_cls_neg(y_true, y_pred):
+    y_true=tf.reshape(y_true,[-1,5])
+    y_pred=tf.reshape(y_pred,[-1,5])
+    mask_pos=tf.greater(y_true[:,0],0.5)
+    mask_neg=tf.less(y_true[:,0],-0.5)
+    y_pos_true=tf.boolean_mask(y_true,mask_pos)
+    y_neg_true=tf.boolean_mask(y_true,mask_neg)
+    
+    y_pos_pred=tf.boolean_mask(y_pred,mask_pos)
+    y_neg_pred=tf.boolean_mask(y_pred,mask_neg)
+    
+    y_neg_pred,y_neg_true=hard_mining(y_neg_pred,y_neg_true,config['num_hard'])
+    y_neg_true=y_neg_true+1.
+    
+    y_true=tf.concat([y_pos_true,y_neg_true],axis=0)
+    y_pred=tf.concat([y_pos_pred,y_neg_pred],axis=0)
+    
+    
+    
+    #add weights to loss respectively to pos and neg
+    N_pos=tf.reduce_sum(y_pos_true[:,0])
+    N_neg=config['num_hard']
+    loss_cls_pos=tf.losses.sigmoid_cross_entropy(y_pos_true[:,0],y_pos_pred[:,0])
+    loss_cls_neg=tf.losses.sigmoid_cross_entropy(y_neg_true[:,0],y_neg_pred[:,0])
+    loss_cls=(config['beta_pos']*loss_cls_pos*N_pos+config['beta_neg']*loss_cls_neg*N_neg)/(N_pos+N_neg)
+    
+    
+    
+#    y_pred_sigmoid=tf.sigmoid(y_pred[:,0])
+##    loss_cls=tf.losses.log_loss(y_true[:,0],y_pred_sigmoid)
+#    loss_cls=tf.losses.sigmoid_cross_entropy(y_true[:,0],y_pred[:,0])
+    return (config['beta_neg']*loss_cls_neg*N_neg)/(N_pos+N_neg)
+
     
 
 def recall(y_true, y_pred):
