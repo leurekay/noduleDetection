@@ -71,16 +71,20 @@ class DataBowl3Detector():
         labels = []
         origins=[]
         extendboxes=[]
+        self.health=[]
         
         for idx in idcs:
             l = np.load(os.path.join(data_dir, '%s_label.npy' %idx))
             if np.all(l==0):
                 l=np.array([])
+                self.health.append(idx)
             labels.append(l)
             origin,_,_,_,extend,_,_=np.load(os.path.join(data_dir, '%s_info.npy' %idx))
             origins.append(origin)
             extendboxes.append(extend)
-
+        
+        self.health = [os.path.join(data_dir, '%s_clean.npy' % idx) for idx in self.health]
+        
         self.sample_bboxes = labels   #contain every patient's annotation,even it doesn't have any anotation
         self.sample_origins=origins
         self.sample_extendboxes=extendboxes
@@ -142,8 +146,8 @@ class DataBowl3Detector():
                      sample, target, bboxes, coord = augment(sample, target, bboxes, coord,
                         ifflip = self.augtype['flip'], ifrotate=self.augtype['rotate'], ifswap = self.augtype['swap'])
             else:
-                randimid = np.random.randint(len(self.filenames))
-                filename = self.filenames[randimid]
+                randimid = np.random.randint(len(self.health))
+                filename = self.health[randimid]
                 imgs = np.load(filename)
                 bboxes = self.sample_bboxes[randimid]
                 isScale = self.augtype['scale'] and (self.phase=='train')
@@ -524,5 +528,5 @@ if __name__=="__main__":
     length=data.__len__()
     
     
-    data=DataBowl3Detector(data_dir,config,phase='val')
-    ooxx=data.package_patches(15)
+#    data=DataBowl3Detector(data_dir,config,phase='val')
+#    ooxx=data.package_patches(15)

@@ -475,29 +475,7 @@ def topkpbb(pbb,lbb,nms_th,detect_th,topk=30):
     topk = np.min
 
 
-def hard_mining22(neg_output, neg_labels, num_hard):
-    _, idcs = torch.topk(neg_output, min(num_hard, len(neg_output)))
-    neg_output = torch.index_select(neg_output, 0, idcs)
-    neg_labels = torch.index_select(neg_labels, 0, idcs)
-    return neg_output, neg_labels([topk,len(allp)])
-    tp_in_topk = np.array([i for i in range(n_tp) if i in sorting[:topk]])
-    fp_in_topk = np.array([i for i in range(topk) if sorting[i] not in range(n_tp)])
-#     print(fp_in_topk)
-    fn_i =       np.array([i for i in range(n_tp) if i not in sorting[:topk]])
-    newallp = allp[:topk]
-    if len(fn_i)>0:
-        fn = np.concatenate([fn,tp[fn_i,:5]])
-    else:
-        fn = fn
-    if len(tp_in_topk)>0:
-        tp = tp[tp_in_topk]
-    else:
-        tp = []
-    if len(fp_in_topk)>0:
-        fp = newallp[fp_in_topk]
-    else:
-        fp = []
-    return tp, fp , fn
+
 
 
 

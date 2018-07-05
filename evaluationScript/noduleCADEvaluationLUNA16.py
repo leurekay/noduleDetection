@@ -514,7 +514,7 @@ if __name__ == '__main__':
     
     #command line parameter setting
     parser = argparse.ArgumentParser()
-    parser.add_argument('--submit', default='/data/lungCT/luna/temp/submit/model33-epoch24-train-1529660541.csv', type=str, 
+    parser.add_argument('--submit', default='/data/lungCT/luna/temp/submit/model38-epoch65-val-1529978742.csv', type=str, 
                         help='submit result csv file')    
     
    
@@ -534,7 +534,7 @@ if __name__ == '__main__':
     
     annotations_filename=os.path.join(config['data_prep_dir'],data_phase+'/'+data_phase+'_anno.csv')
 #    annotations_filename='/data/lungCT/luna/temp/my_anno.csv'
-    annotations_excluded_filename = 'annotations/annotations_excluded.csv'
+    annotations_excluded_filename = 'annotations/annotations_excluded_.csv'
     seriesuids_filename           = 'annotations/seriesuids.csv'
     
     results_filename              = submit_path
