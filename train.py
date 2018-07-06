@@ -109,6 +109,9 @@ else:
 loss_cls=layers.loss_cls
 recall=layers.recall
 
+nohard=layers.nohard
+cls_nohard=layers.cls_nohard
+
 
 #custumn loss function
 myloss=layers.myloss
@@ -116,7 +119,7 @@ myloss=layers.myloss
 #compile
 model.compile(optimizer=config['optimizer'],
               loss=myloss,
-              metrics=[loss_cls,recall])
+              metrics=[loss_cls,recall,nohard,cls_nohard])
 
 
 
@@ -125,7 +128,7 @@ model.compile(optimizer=config['optimizer'],
 
 
 #checkpoint for callback
-checkpoint=ModelCheckpoint(filepath=os.path.join(model_dir,'epoch:{epoch:03d}-loss-cls-recall:{loss:.3f}-{loss_cls:.3f}-{recall:.3f}-valloss_cls_recall:{val_loss:.3f}-{val_loss_cls:.3f}-{val_recall:.3f}.h5'), 
+checkpoint=ModelCheckpoint(filepath=os.path.join(model_dir,'epoch:{epoch:03d}-loss-cls-recall:{loss:.3f}-{loss_cls:.3f}-{recall:.3f}-{nohard:.3f}-{cls_nohard:.3f}-valloss_cls_recall:{val_loss:.3f}-{val_loss_cls:.3f}-{val_recall:.3f}-{val_nohard:.3f}-{val_cls_nohard:.3f}.h5'), 
                                 monitor='val_loss', 
                                 verbose=0, 
                                 save_best_only=False, 
